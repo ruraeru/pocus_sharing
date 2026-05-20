@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Connection test rule
+    match /connection_test/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    match /groups/{groupId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (
+        get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role == 'ADMIN'
+      );
+      
+      match /members/{memberId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null;
+      }
+      
+      match /daily_stats/{date}/user_stats/{userId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    match /timer_logs/{logId} {
+      allow read: if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.user_id;
+    }
+  }
+}

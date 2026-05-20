@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">pocusSharing</string>
+    <string name="pocus">Pocus</string>
+    <string name="date_placeholder">7월 16일</string>
+    <string name="focus">뽀커스</string>
+    <string name="rest">휴식</string>
+    <string name="timer_placeholder">HH:MM:02</string>
+    <string name="column_no">번호</string>
+    <string name="column_time">시간</string>
+    <string name="column_type">타입</string>
+    <string name="nav_home">홈</string>
+    <string name="nav_group">그룹</string>
+    <string name="nav_settings">설정</string>
+</resources>

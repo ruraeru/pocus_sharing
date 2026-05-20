@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="pocus_red">#CC3333</color>
+    <color name="pocus_pink">#FFC1C1</color>
+    <color name="pocus_gray">#CCCCCC</color>
+    <color name="text_gray">#666666</color>
+    <color name="nav_background">#E0E0E0</color>
+</resources>

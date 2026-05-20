@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "76285601592",
+    "project_id": "pocus-sharing-2026",
+    "storage_bucket": "pocus-sharing-2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:76285601592:android:1cac7cfb1309c51a7443cd",
+        "android_client_info": {
+          "package_name": "com.example.pocussharing"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBImZ4BcqNuXgoFLBBoCv63szfohy0t-bE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
