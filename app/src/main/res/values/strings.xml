@@ -11,4 +11,6 @@
     <string name="nav_home">홈</string>
     <string name="nav_group">그룹</string>
     <string name="nav_settings">설정</string>
+    <string name="kakao_app_key">YOUR_KAKAO_APP_KEY</string>
+    <string name="kakao_scheme">kakaoYOUR_KAKAO_APP_KEY</string>
 </resources>

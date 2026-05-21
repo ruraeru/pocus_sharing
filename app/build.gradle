@@ -5,15 +5,11 @@ plugins {
 
 android {
     namespace 'com.example.pocussharing'
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.example.pocussharing"
-        minSdk 36
+        minSdk 33
         targetSdk 36
         versionCode 1
         versionName "1.0"
@@ -38,16 +34,21 @@ dependencies {
     implementation libs.appcompat
     implementation libs.constraintlayout
     implementation libs.material
+    implementation libs.navigation.fragment
+    implementation libs.navigation.fragment.ktx
+    implementation libs.navigation.ui
 
     // Firebase
     implementation platform(libs.firebase.bom)
     implementation libs.firebase.auth
     implementation libs.firebase.firestore
+    implementation libs.firebase.database
+
+    // Kakao
+    implementation libs.kakao.user
+    implementation libs.navigation.ui.ktx
 
     testImplementation libs.junit
     androidTestImplementation libs.espresso.core
     androidTestImplementation libs.ext.junit
-
-    implementation platform('com.google.firebase:firebase-bom:34.13.0')
-
 }
