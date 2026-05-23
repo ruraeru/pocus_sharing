@@ -1,5 +1,6 @@
 package com.example.pocussharing.repository;
 
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import java.util.HashMap;
@@ -34,5 +35,9 @@ public class RtdbRepository {
     
     public DatabaseReference getGroupPresenceRef(String groupId) {
         return presenceRef.child(groupId);
+    }
+
+    public Task<Void> deleteGroupPresence(String groupId) {
+        return presenceRef.child(groupId).removeValue();
     }
 }

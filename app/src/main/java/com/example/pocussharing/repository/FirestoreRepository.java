@@ -86,6 +86,22 @@ public class FirestoreRepository {
         return db.collection(GROUPS_COLLECTION).document(groupId).update(updates);
     }
 
+    public Task<Void> deleteGroup(String groupId) {
+        DocumentReference groupRef = db.collection(GROUPS_COLLECTION).document(groupId);
+        
+        // Delete all members in subcollection first
+        return groupRef.collection("members").get().continueWithTask(task -> {
+            WriteBatch batch = db.batch();
+            if (task.isSuccessful() && task.getResult() != null) {
+                for (DocumentSnapshot doc : task.getResult()) {
+                    batch.delete(doc.getReference());
+                }
+            }
+            batch.delete(groupRef);
+            return batch.commit();
+        });
+    }
+
     public Task<DocumentSnapshot> getGroup(String groupId) {
         return db.collection(GROUPS_COLLECTION).document(groupId).get();
     }
