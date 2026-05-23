@@ -1,0 +1,13 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "group_presence": {
+      "$groupId": {
+        "$userId": {
+          ".write": "auth != null && auth.uid == $userId"
+        }
+      }
+    }
+  }
+}

@@ -86,8 +86,21 @@ public class HomeFragment extends Fragment {
         dotRest.setOnClickListener(v -> setMode(false));
 
         updateUI(totalSessionTime);
+        loadTodayStats();
         
         return view;
+    }
+
+    private void loadTodayStats() {
+        if (mAuth.getCurrentUser() != null) {
+            String uid = mAuth.getCurrentUser().getUid();
+            repository.getDailyFocusTime(uid).addOnSuccessListener(focusSec -> {
+                totalCumulativeMillis = focusSec * 1000L;
+                updateUI(timeLeft);
+            }).addOnFailureListener(e -> {
+                Log.e("HomeFragment", "Failed to load daily stats", e);
+            });
+        }
     }
 
     private void setMode(boolean isFocus) {

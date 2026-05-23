@@ -9,7 +9,8 @@ public class RtdbRepository {
     private DatabaseReference presenceRef;
 
     public RtdbRepository() {
-        this.presenceRef = FirebaseDatabase.getInstance().getReference("group_presence");
+        this.presenceRef = FirebaseDatabase.getInstance("https://pocus-sharing-2026-default-rtdb.firebaseio.com")
+                .getReference("group_presence");
     }
 
     public void updateUserStatus(String groupId, String userId, boolean isFocus, long timeLeftMillis) {

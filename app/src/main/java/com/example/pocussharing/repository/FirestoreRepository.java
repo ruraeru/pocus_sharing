@@ -86,4 +86,18 @@ public class FirestoreRepository {
 
         return batch.commit();
     }
+
+    public Task<Integer> getDailyFocusTime(String userId) {
+        String dateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        return db.collection(USERS_COLLECTION).document(userId)
+                .collection("daily_stats").document(dateStr)
+                .get()
+                .continueWith(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                        Long focusSec = task.getResult().getLong("totalFocusSec");
+                        return focusSec != null ? focusSec.intValue() : 0;
+                    }
+                    return 0;
+                });
+    }
 }
