@@ -415,14 +415,12 @@ public class GroupDetailActivity extends AppCompatActivity {
             holder.timerView.setProgress(progress);
             
             int seconds = (int) (status.getTimeLeft() / 1000);
-            int mins = seconds / 60;
-            int secs = seconds % 60;
-            holder.tvTime.setText(String.format(Locale.getDefault(), "%02d:%02d", mins, secs));
+            int h = seconds / 3600;
+            int m = (seconds % 3600) / 60;
+            int s = seconds % 60;
+            holder.tvTime.setText(String.format(Locale.getDefault(), "%02d:%02d:%02d", h, m, s));
 
-            long totalSec = status.getTodayFocusTime() / 1000;
-            long h = totalSec / 3600;
-            long m = (totalSec % 3600) / 60;
-            holder.tvTotalToday.setText(String.format(Locale.getDefault(), "오늘: %d시간 %d분", h, m));
+            holder.tvTotalToday.setText(String.format(Locale.getDefault(), "오늘: %d시간 %d분 %d초", h, m, s));
 
             holder.itemView.setOnLongClickListener(v -> {
                 longClickListener.onLongClick(status);
