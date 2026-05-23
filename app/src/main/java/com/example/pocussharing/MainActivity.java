@@ -15,6 +15,8 @@ import androidx.navigation.ui.NavigationUI;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 
+import java.util.concurrent.Executor;
+
 public class MainActivity extends AppCompatActivity {
 
     private FirebaseAuth mAuth;
@@ -51,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void signInAnonymously() {
         mAuth.signInAnonymously()
-            .addOnCompleteListener(this, task -> {
+            .addOnCompleteListener((Executor) this, task -> {
                 if (task.isSuccessful()) {
                     Log.d("MainActivity", "signInAnonymously:success");
                 } else {

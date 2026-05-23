@@ -60,7 +60,7 @@ public class FirestoreRepository {
 
         // Update Daily Stats for User
         String dateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-        DocumentReference userStatRef = db.collection(USERS_COLLECTION).document(log.getUserId())
+        DocumentReference userStatRef = db.collection(USERS_COLLECTION).document(log.getUser_id())
             .collection("daily_stats").document(dateStr);
 
         int focusInc = log.getLogType().equals("FOCUS") ? log.getDurationSeconds() : 0;
@@ -76,7 +76,7 @@ public class FirestoreRepository {
         if (log.getGroupId() != null) {
             DocumentReference groupStatRef = db.collection(GROUPS_COLLECTION).document(log.getGroupId())
                 .collection("daily_stats").document(dateStr)
-                .collection("user_stats").document(log.getUserId());
+                .collection("user_stats").document(log.getUser_id());
             
             batch.set(groupStatRef, new HashMap<String, Object>() {{
                 put("focusSeconds", FieldValue.increment(focusInc));
@@ -99,5 +99,17 @@ public class FirestoreRepository {
                     }
                     return 0;
                 });
+    }
+
+    public Task<QuerySnapshot> getRecentTimerLogs(String userId) {
+        return db.collection(TIMER_LOGS_COLLECTION)
+                .whereEqualTo("user_id", userId)
+                .get();
+    }
+
+    public ListenerRegistration getTimerLogsListener(String userId, EventListener<QuerySnapshot> listener) {
+        return db.collection(TIMER_LOGS_COLLECTION)
+                .whereEqualTo("user_id", userId)
+                .addSnapshotListener(listener);
     }
 }

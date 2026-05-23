@@ -1,12 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 공통: 인증된 사용자만 접근 가능
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // users 컬렉션 및 하위 daily_stats 연동
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && request.auth.uid == userId;
@@ -16,7 +14,6 @@ service cloud.firestore {
       }
     }
     
-    // groups 컬렉션 연동
     match /groups/{groupId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
@@ -29,17 +26,15 @@ service cloud.firestore {
         allow write: if isAuthenticated();
       }
       
-      // 그룹 내 통계
       match /daily_stats/{date}/user_stats/{userId} {
         allow read: if isAuthenticated();
         allow write: if isAuthenticated() && request.auth.uid == userId;
       }
     }
     
-    // timer_logs 컬렉션 연동 (userId 필드 기준)
     match /timer_logs/{logId} {
-      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
-      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow read: if isAuthenticated() && (resource == null || resource.data.user_id == request.auth.uid);
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.user_id;
     }
   }
 }

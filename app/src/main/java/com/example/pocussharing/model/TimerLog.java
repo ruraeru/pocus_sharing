@@ -4,7 +4,7 @@ import com.google.firebase.Timestamp;
 
 public class TimerLog {
     private String logId;
-    private String userId;
+    private String user_id;
     private String groupId; // Can be null
     private String logType; // FOCUS, REST
     private int durationSeconds;
@@ -14,8 +14,8 @@ public class TimerLog {
 
     public TimerLog() {}
 
-    public TimerLog(String userId, String logType, int durationSeconds, Timestamp startTime, Timestamp endTime) {
-        this.userId = userId;
+    public TimerLog(String user_id, String logType, int durationSeconds, Timestamp startTime, Timestamp endTime) {
+        this.user_id = user_id;
         this.logType = logType;
         this.durationSeconds = durationSeconds;
         this.startTime = startTime;
@@ -26,8 +26,8 @@ public class TimerLog {
     // Getters and Setters
     public String getLogId() { return logId; }
     public void setLogId(String logId) { this.logId = logId; }
-    public String getUserId() { return userId; }
-    public void setUserId(String userId) { this.userId = userId; }
+    public String getUser_id() { return user_id; }
+    public void setUser_id(String user_id) { this.user_id = user_id; }
     public String getGroupId() { return groupId; }
     public void setGroupId(String groupId) { this.groupId = groupId; }
     public String getLogType() { return logType; }

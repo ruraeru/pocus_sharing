@@ -17,6 +17,31 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- User Profile Section -->
+    <ImageView
+        android:id="@+id/iv_profile"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/circle_gray"
+        android:clipToOutline="true"
+        android:scaleType="centerCrop"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_title" />
+
+    <TextView
+        android:id="@+id/tv_nickname_display"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:text="사용자 이름"
+        android:textColor="@color/black"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/iv_profile"
+        app:layout_constraintStart_toEndOf="@id/iv_profile"
+        app:layout_constraintTop_toTopOf="@id/iv_profile" />
+
     <TextView
         android:id="@+id/tv_nickname_label"
         android:layout_width="wrap_content"
@@ -26,7 +51,7 @@
         android:textColor="@color/black"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_title" />
+        app:layout_constraintTop_toBottomOf="@id/iv_profile" />
 
     <EditText
         android:id="@+id/et_nickname"
@@ -63,7 +88,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="알람 끄기" />
+        android:text="알람 끄기"
+        app:layout_constraintTop_toBottomOf="@id/tv_app_settings_label" />
 
     <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/switch_screen_on"
@@ -80,5 +106,15 @@
         android:layout_marginTop="16dp"
         android:text="앱 나가기 방지"
         app:layout_constraintTop_toBottomOf="@id/switch_screen_on" />
+
+    <Button
+        android:id="@+id/btn_logout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:backgroundTint="@color/text_gray"
+        android:text="로그아웃"
+        android:textColor="@color/white"
+        app:layout_constraintTop_toBottomOf="@id/switch_app_exit_prevention" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

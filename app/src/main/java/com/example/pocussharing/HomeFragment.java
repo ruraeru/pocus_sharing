@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -14,13 +15,18 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.bumptech.glide.Glide;
 import com.example.pocussharing.model.TimerLog;
 import com.example.pocussharing.repository.FirestoreRepository;
 import com.example.pocussharing.repository.RtdbRepository;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.ListenerRegistration;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 public class HomeFragment extends Fragment {
@@ -28,10 +34,12 @@ public class HomeFragment extends Fragment {
     private TimerView timerView;
     private TextView tvDigitalTimer;
     private TextView tvDate;
+    private ImageView ivProfile;
     private FirebaseAuth mAuth;
     private FirestoreRepository repository;
     private RtdbRepository rtdbRepository;
     private Handler handler = new Handler(Looper.getMainLooper());
+    private ListenerRegistration logsListener;
     
     private long sessionStartTimeMillis;
     private long timeLeft = 25 * 60 * 1000;
@@ -59,6 +67,7 @@ public class HomeFragment extends Fragment {
         timerView = view.findViewById(R.id.timer_view);
         tvDigitalTimer = view.findViewById(R.id.tv_digital_timer);
         tvDate = view.findViewById(R.id.tv_date);
+        ivProfile = view.findViewById(R.id.iv_profile);
         llTable = view.findViewById(R.id.ll_table);
         dotFocus = view.findViewById(R.id.dot_focus);
         dotRest = view.findViewById(R.id.dot_rest);
@@ -89,8 +98,82 @@ public class HomeFragment extends Fragment {
         updateUI(totalSessionTime);
         loadUserProfile();
         loadTodayStats();
+        setupLogsListener();
         
         return view;
+    }
+
+    private void setupLogsListener() {
+        if (mAuth.getCurrentUser() == null) return;
+        
+        String uid = mAuth.getCurrentUser().getUid();
+        if (logsListener != null) logsListener.remove();
+
+        logsListener = repository.getTimerLogsListener(uid, (value, error) -> {
+            if (error != null) {
+                Log.e("HomeFragment", "Logs listener failed", error);
+                return;
+            }
+            if (value != null) {
+                Log.d("HomeFragment", "Real-time logs update. Count: " + value.size());
+                updateLogsTable(value.getDocuments());
+            }
+        });
+    }
+
+    private void updateLogsTable(List<com.google.firebase.firestore.DocumentSnapshot> docs) {
+        // Clear current table (except header)
+        int childCount = llTable.getChildCount();
+        if (childCount > 1) {
+            llTable.removeViews(1, childCount - 1);
+        }
+        recordCount = 0;
+
+        List<com.google.firebase.firestore.DocumentSnapshot> mutableDocs = new ArrayList<>(docs);
+        // Sort in Java: oldest to newest (to add to table at index 1, effectively newest at top)
+        Collections.sort(mutableDocs, (d1, d2) -> {
+            com.google.firebase.Timestamp t1 = d1.getTimestamp("createdAt");
+            com.google.firebase.Timestamp t2 = d2.getTimestamp("createdAt");
+            if (t1 == null || t2 == null) return 0;
+            return t1.compareTo(t2);
+        });
+
+        for (com.google.firebase.firestore.DocumentSnapshot doc : mutableDocs) {
+            TimerLog log = doc.toObject(TimerLog.class);
+            if (log != null) {
+                addLogToTableUI(log);
+            }
+        }
+        
+        if (mutableDocs.isEmpty()) {
+            Log.d("HomeFragment", "No logs found in Firestore.");
+        }
+    }
+
+    private void addLogToTableUI(TimerLog log) {
+        recordCount++;
+        int durationSec = log.getDurationSeconds();
+        int seconds = durationSec % 60;
+        int minutes = (durationSec / 60) % 60;
+        int hours = durationSec / 3600;
+
+        String timeStr;
+        if (hours > 0) {
+            timeStr = String.format(Locale.getDefault(), "%d시간 %d분 %d초", hours, minutes, seconds);
+        } else if (minutes > 0) {
+            timeStr = String.format(Locale.getDefault(), "%d분 %d초", minutes, seconds);
+        } else {
+            timeStr = String.format(Locale.getDefault(), "%d초", seconds);
+        }
+
+        String typeStr = log.getLogType().equals("FOCUS") ? "집중" : "휴식";
+
+        View row = getLayoutInflater().inflate(R.layout.table_row, llTable, false);
+        ((TextView) row.findViewById(R.id.tv_no)).setText(String.valueOf(recordCount));
+        ((TextView) row.findViewById(R.id.tv_time)).setText(timeStr);
+        ((TextView) row.findViewById(R.id.tv_type)).setText(typeStr);
+
+        llTable.addView(row, 1);
     }
 
     private void loadUserProfile() {
@@ -100,6 +183,14 @@ public class HomeFragment extends Fragment {
                 if (documentSnapshot.exists()) {
                     userNickname = documentSnapshot.getString("nickname");
                     if (userNickname == null) userNickname = "GUEST";
+
+                    String profileImageUrl = documentSnapshot.getString("profileImageUrl");
+                    if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
+                        Glide.with(this)
+                            .load(profileImageUrl)
+                            .circleCrop()
+                            .into(ivProfile);
+                    }
                 }
             });
         }
@@ -134,8 +225,11 @@ public class HomeFragment extends Fragment {
         timerView.setProgress(progress);
         
         long displayMillis = totalCumulativeMillis;
-        if (isRunning) {
+        if (isRunning && isFocusMode) {
             displayMillis += (totalSessionTime - timeLeft);
+        }
+        
+        if (isRunning) {
             syncStatusToRtdb();
         }
         updateDigitalTimer(displayMillis);
@@ -160,7 +254,9 @@ public class HomeFragment extends Fragment {
     private void toggleTimer() {
         if (isRunning) {
             long elapsed = totalSessionTime - timeLeft;
-            totalCumulativeMillis += elapsed;
+            if (isFocusMode) {
+                totalCumulativeMillis += elapsed;
+            }
             stopTimer();
             addRecordToTable();
         } else {
@@ -185,34 +281,8 @@ public class HomeFragment extends Fragment {
     }
 
     private void addRecordToTable() {
-        recordCount++;
-        
         long currentSessionElapsed = totalSessionTime - timeLeft;
         if (currentSessionElapsed <= 0) return;
-
-        int seconds = (int) (currentSessionElapsed / 1000);
-        int minutes = seconds / 60;
-        int hours = minutes / 60;
-        seconds = seconds % 60;
-        minutes = minutes % 60;
-
-        String timeStr;
-        if (hours > 0) {
-            timeStr = String.format(Locale.getDefault(), "%d시간 %d분 %d초", hours, minutes, seconds);
-        } else if (minutes > 0) {
-            timeStr = String.format(Locale.getDefault(), "%d분 %d초", minutes, seconds);
-        } else {
-            timeStr = String.format(Locale.getDefault(), "%d초", seconds);
-        }
-        
-        String typeStr = isFocusMode ? "집중" : "휴식";
-
-        View row = getLayoutInflater().inflate(R.layout.table_row, llTable, false);
-        ((TextView) row.findViewById(R.id.tv_no)).setText(String.valueOf(recordCount));
-        ((TextView) row.findViewById(R.id.tv_time)).setText(timeStr);
-        ((TextView) row.findViewById(R.id.tv_type)).setText(typeStr);
-        
-        llTable.addView(row, 1);
 
         saveLogToFirebase(currentSessionElapsed);
     }
@@ -235,7 +305,10 @@ public class HomeFragment extends Fragment {
         );
 
         repository.saveTimerLog(log)
-            .addOnSuccessListener(aVoid -> Log.d("Firebase", "Timer log and stats updated!"))
+            .addOnSuccessListener(aVoid -> {
+                Log.d("Firebase", "Timer log and stats updated!");
+                // Table will be refreshed automatically by snapshots listener
+            })
             .addOnFailureListener(e -> Log.e("Firebase", "Failed to save log", e));
     }
 
@@ -245,7 +318,9 @@ public class HomeFragment extends Fragment {
             timeLeft -= 1000;
             if (timeLeft <= 0) {
                 timeLeft = 0;
-                totalCumulativeMillis += totalSessionTime;
+                if (isFocusMode) {
+                    totalCumulativeMillis += totalSessionTime;
+                }
                 updateUI(timeLeft);
                 stopTimer();
                 addRecordToTable();
@@ -258,8 +333,19 @@ public class HomeFragment extends Fragment {
     };
 
     @Override
+    public void onResume() {
+        super.onResume();
+        loadUserProfile();
+        loadTodayStats();
+        setupLogsListener();
+    }
+
+    @Override
     public void onDestroyView() {
         super.onDestroyView();
         handler.removeCallbacks(timerRunnable);
+        if (logsListener != null) {
+            logsListener.remove();
+        }
     }
 }
