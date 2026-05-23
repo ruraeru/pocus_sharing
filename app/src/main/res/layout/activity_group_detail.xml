@@ -10,7 +10,19 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:layout_constraintTop_toTopOf="parent"
-        app:title="그룹 상세" />
+        app:title="그룹 상세">
+
+        <ImageButton
+            android:id="@+id/btn_manage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginEnd="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_manage"
+            android:visibility="gone" />
+
+    </androidx.appcompat.widget.Toolbar>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_members"

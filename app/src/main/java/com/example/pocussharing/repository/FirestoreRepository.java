@@ -46,8 +46,48 @@ public class FirestoreRepository {
 
     public Task<Void> joinGroup(String groupId, String userId) {
         GroupMember member = new GroupMember(userId, "MEMBER");
-        return db.collection(GROUPS_COLLECTION).document(groupId)
-            .collection("members").document(userId).set(member);
+        WriteBatch batch = db.batch();
+        
+        DocumentReference groupRef = db.collection(GROUPS_COLLECTION).document(groupId);
+        batch.set(groupRef.collection("members").document(userId), member);
+        batch.update(groupRef, "memberIds", FieldValue.arrayUnion(userId));
+        
+        return batch.commit();
+    }
+
+    public Task<QuerySnapshot> getUserGroups(String userId) {
+        return db.collection(GROUPS_COLLECTION)
+                .whereArrayContains("memberIds", userId)
+                .get();
+    }
+
+    public ListenerRegistration getUserGroupsListener(String userId, EventListener<QuerySnapshot> listener) {
+        return db.collection(GROUPS_COLLECTION)
+                .whereArrayContains("memberIds", userId)
+                .addSnapshotListener(listener);
+    }
+
+    public Task<QuerySnapshot> findGroupByCode(String code) {
+        return db.collection(GROUPS_COLLECTION)
+                .whereEqualTo("groupCode", code)
+                .limit(1)
+                .get();
+    }
+
+    public Task<Void> leaveGroup(String groupId, String userId) {
+        WriteBatch batch = db.batch();
+        DocumentReference groupRef = db.collection(GROUPS_COLLECTION).document(groupId);
+        batch.delete(groupRef.collection("members").document(userId));
+        batch.update(groupRef, "memberIds", FieldValue.arrayRemove(userId));
+        return batch.commit();
+    }
+
+    public Task<Void> updateGroup(String groupId, Map<String, Object> updates) {
+        return db.collection(GROUPS_COLLECTION).document(groupId).update(updates);
+    }
+
+    public Task<DocumentSnapshot> getGroup(String groupId) {
+        return db.collection(GROUPS_COLLECTION).document(groupId).get();
     }
 
     // --- Timer Log & Stats Operations ---

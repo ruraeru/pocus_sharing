@@ -54,6 +54,7 @@ public class HomeFragment extends Fragment {
     private int recordCount = 0; 
     private long totalCumulativeMillis = 0;
     private String userNickname = "GUEST";
+    private List<String> userGroupIds = new ArrayList<>();
 
     @Nullable
     @Override
@@ -193,6 +194,14 @@ public class HomeFragment extends Fragment {
                     }
                 }
             });
+
+            // Load user's groups for real-time status sync
+            repository.getUserGroups(uid).addOnSuccessListener(queryDocumentSnapshots -> {
+                userGroupIds.clear();
+                for (com.google.firebase.firestore.DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                    userGroupIds.add(doc.getId());
+                }
+            });
         }
     }
 
@@ -238,8 +247,20 @@ public class HomeFragment extends Fragment {
     private void syncStatusToRtdb() {
         if (mAuth.getCurrentUser() == null) return;
         String uid = mAuth.getCurrentUser().getUid();
-        // Fixed group for now
-        rtdbRepository.updateUserStatus("main_group", uid, userNickname, isFocusMode, timeLeft);
+        
+        long totalTodayFocus = totalCumulativeMillis;
+        if (isRunning && isFocusMode) {
+            totalTodayFocus += (totalSessionTime - timeLeft);
+        }
+
+        // Sync to all groups the user belongs to
+        if (userGroupIds.isEmpty()) {
+            rtdbRepository.updateUserStatus("main_group", uid, userNickname, isFocusMode, timeLeft, totalTodayFocus);
+        } else {
+            for (String gid : userGroupIds) {
+                rtdbRepository.updateUserStatus(gid, uid, userNickname, isFocusMode, timeLeft, totalTodayFocus);
+            }
+        }
     }
 
     private void updateDigitalTimer(long millis) {

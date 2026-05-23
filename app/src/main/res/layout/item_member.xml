@@ -36,6 +36,15 @@
             android:text="25:00"
             android:textColor="@color/black" />
 
+        <TextView
+            android:id="@+id/tv_total_today"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="오늘: 0시간 0분"
+            android:textColor="@color/text_gray"
+            android:textSize="12sp" />
+
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

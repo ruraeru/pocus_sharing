@@ -8,6 +8,7 @@ public class Group {
     private String groupCode;
     private int maxMembers;
     private String adminId;
+    private java.util.List<String> memberIds;
     private Timestamp createdAt;
 
     public Group() {}
@@ -16,6 +17,8 @@ public class Group {
         this.groupName = groupName;
         this.groupCode = groupCode;
         this.adminId = adminId;
+        this.memberIds = new java.util.ArrayList<>();
+        this.memberIds.add(adminId);
         this.maxMembers = 12;
         this.createdAt = Timestamp.now();
     }
@@ -31,6 +34,8 @@ public class Group {
     public void setMaxMembers(int maxMembers) { this.maxMembers = maxMembers; }
     public String getAdminId() { return adminId; }
     public void setAdminId(String adminId) { this.adminId = adminId; }
+    public java.util.List<String> getMemberIds() { return memberIds; }
+    public void setMemberIds(java.util.List<String> memberIds) { this.memberIds = memberIds; }
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
 }
