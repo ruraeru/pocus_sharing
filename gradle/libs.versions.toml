@@ -12,8 +12,8 @@ firebaseBom = "33.9.0"
 kakao = "2.20.1"
 kotlin = "2.0.0"
 navigation = "2.8.5"
-navigationFragmentKtx = "2.9.8"
-navigationUiKtx = "2.9.8"
+navigationFragmentKtx = "2.8.5"
+navigationUiKtx = "2.8.5"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }

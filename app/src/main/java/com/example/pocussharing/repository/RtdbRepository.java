@@ -13,10 +13,12 @@ public class RtdbRepository {
                 .getReference("group_presence");
     }
 
-    public void updateUserStatus(String groupId, String userId, boolean isFocus, long timeLeftMillis) {
+    public void updateUserStatus(String groupId, String userId, String name, boolean isFocus, long timeLeftMillis) {
         if (groupId == null || userId == null) return;
 
         Map<String, Object> status = new HashMap<>();
+        status.put("userId", userId);
+        status.put("name", name);
         status.put("isFocus", isFocus);
         status.put("timeLeft", timeLeftMillis);
         status.put("timestamp", System.currentTimeMillis());

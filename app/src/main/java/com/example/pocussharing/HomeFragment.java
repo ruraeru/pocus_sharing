@@ -45,6 +45,7 @@ public class HomeFragment extends Fragment {
     private LinearLayout llTable;
     private int recordCount = 0; 
     private long totalCumulativeMillis = 0;
+    private String userNickname = "GUEST";
 
     @Nullable
     @Override
@@ -86,9 +87,22 @@ public class HomeFragment extends Fragment {
         dotRest.setOnClickListener(v -> setMode(false));
 
         updateUI(totalSessionTime);
+        loadUserProfile();
         loadTodayStats();
         
         return view;
+    }
+
+    private void loadUserProfile() {
+        if (mAuth.getCurrentUser() != null) {
+            String uid = mAuth.getCurrentUser().getUid();
+            repository.getUser(uid).addOnSuccessListener(documentSnapshot -> {
+                if (documentSnapshot.exists()) {
+                    userNickname = documentSnapshot.getString("nickname");
+                    if (userNickname == null) userNickname = "GUEST";
+                }
+            });
+        }
     }
 
     private void loadTodayStats() {
@@ -131,7 +145,7 @@ public class HomeFragment extends Fragment {
         if (mAuth.getCurrentUser() == null) return;
         String uid = mAuth.getCurrentUser().getUid();
         // Fixed group for now
-        rtdbRepository.updateUserStatus("main_group", uid, isFocusMode, timeLeft);
+        rtdbRepository.updateUserStatus("main_group", uid, userNickname, isFocusMode, timeLeft);
     }
 
     private void updateDigitalTimer(long millis) {
