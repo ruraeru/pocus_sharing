@@ -1,6 +1,11 @@
 package com.example.pocussharing;
 
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -67,6 +72,23 @@ public class GroupDetailActivity extends AppCompatActivity {
     private long totalCumulativeMillis = 0;
     private String userNickname = "GUEST";
 
+    private SharedPreferences prefs;
+    private boolean wasPenalized = false;
+
+    private final BroadcastReceiver appLifecycleReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (PocusApplication.ACTION_APP_BACKGROUND.equals(intent.getAction())) {
+                checkAppExitPenalty();
+            } else if (PocusApplication.ACTION_APP_FOREGROUND.equals(intent.getAction())) {
+                if (wasPenalized) {
+                    Toast.makeText(GroupDetailActivity.this, "앱 이탈이 감지되어 타이머가 중지되고 저장되었습니다.", Toast.LENGTH_LONG).show();
+                    wasPenalized = false;
+                }
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,6 +99,8 @@ public class GroupDetailActivity extends AppCompatActivity {
         String groupName = getIntent().getStringExtra("groupName");
         if (groupId == null) groupId = "main_group"; 
 
+        prefs = getSharedPreferences("PocusPrefs", Context.MODE_PRIVATE);
+
         initViews(groupName);
         
         rtdbRepository = new RtdbRepository();
@@ -86,6 +110,30 @@ public class GroupDetailActivity extends AppCompatActivity {
         loadUserProfile();
         loadTodayStats();
         listenToPresence();
+    }
+
+    private void checkAppExitPenalty() {
+        boolean preventionEnabled = prefs.getBoolean("app_exit_prevention", false);
+        if (preventionEnabled && isRunning && isFocusMode) {
+            Log.d("GroupDetail", "App exit prevention triggered. Stopping timer.");
+            toggleTimer(); // This stops timer and saves record
+            wasPenalized = true;
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(PocusApplication.ACTION_APP_BACKGROUND);
+        filter.addAction(PocusApplication.ACTION_APP_FOREGROUND);
+        registerReceiver(appLifecycleReceiver, filter, Context.RECEIVER_EXPORTED);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unregisterReceiver(appLifecycleReceiver);
     }
 
     private void initViews(String groupName) {

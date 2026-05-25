@@ -47,6 +47,7 @@ dependencies {
     // Kakao
     implementation libs.kakao.user
     implementation libs.navigation.ui.ktx
+    implementation libs.lifecycle.process
 
     // Glide
     implementation libs.glide

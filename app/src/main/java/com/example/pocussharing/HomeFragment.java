@@ -1,5 +1,10 @@
 package com.example.pocussharing;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -10,6 +15,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -57,6 +63,25 @@ public class HomeFragment extends Fragment {
     private String userNickname = "GUEST";
     private List<String> userGroupIds = new ArrayList<>();
 
+    private SharedPreferences prefs;
+    private boolean wasPenalized = false;
+
+    private final BroadcastReceiver appLifecycleReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (PocusApplication.ACTION_APP_BACKGROUND.equals(intent.getAction())) {
+                checkAppExitPenalty();
+            } else if (PocusApplication.ACTION_APP_FOREGROUND.equals(intent.getAction())) {
+                if (wasPenalized) {
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "앱 이탈이 감지되어 타이머가 중지되고 저장되었습니다.", Toast.LENGTH_LONG).show();
+                    }
+                    wasPenalized = false;
+                }
+            }
+        }
+    };
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -65,6 +90,7 @@ public class HomeFragment extends Fragment {
         mAuth = FirebaseAuth.getInstance();
         repository = new FirestoreRepository();
         rtdbRepository = new RtdbRepository();
+        prefs = requireActivity().getSharedPreferences("PocusPrefs", Context.MODE_PRIVATE);
         
         timerView = view.findViewById(R.id.timer_view);
         tvDigitalTimer = view.findViewById(R.id.tv_digital_timer);
@@ -109,6 +135,15 @@ public class HomeFragment extends Fragment {
         setupLogsListener();
         
         return view;
+    }
+
+    private void checkAppExitPenalty() {
+        boolean preventionEnabled = prefs.getBoolean("app_exit_prevention", false);
+        if (preventionEnabled && isRunning && isFocusMode) {
+            Log.d("HomeFragment", "App exit prevention triggered. Stopping timer.");
+            toggleTimer(); // This stops timer and saves record
+            wasPenalized = true;
+        }
     }
 
     private void setupLogsListener() {
@@ -362,11 +397,30 @@ public class HomeFragment extends Fragment {
     };
 
     @Override
+    public void onStart() {
+        super.onStart();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(PocusApplication.ACTION_APP_BACKGROUND);
+        filter.addAction(PocusApplication.ACTION_APP_FOREGROUND);
+        if (getActivity() != null) {
+            getActivity().registerReceiver(appLifecycleReceiver, filter, Context.RECEIVER_EXPORTED);
+        }
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         loadUserProfile();
         loadTodayStats();
         setupLogsListener();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (getActivity() != null) {
+            getActivity().unregisterReceiver(appLifecycleReceiver);
+        }
     }
 
     @Override

@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.kakao.sdk.auth.model.OAuthToken;
+import com.kakao.sdk.common.util.Utility;
 import com.kakao.sdk.user.UserApiClient;
 
 import java.util.HashMap;
@@ -27,9 +28,8 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-
+        Log.d("KeyHash", "Current KeyHash: " + Utility.INSTANCE.getKeyHash(this));
         mAuth = FirebaseAuth.getInstance();
-
         // Auto Login Check
         UserApiClient.getInstance().me((user, error) -> {
             if (user != null) {
