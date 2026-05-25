@@ -42,7 +42,7 @@ public class TimerView extends View {
         if (isFocus) {
             arcPaint.setColor(0xFFCC3333); // pocus_red
         } else {
-            arcPaint.setColor(0xFFCCCCCC); // pocus_gray or another rest color
+            arcPaint.setColor(0xFF4CAF50); // pocus_green
         }
         invalidate();
     }
