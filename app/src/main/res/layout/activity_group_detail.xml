@@ -25,45 +25,35 @@
     </androidx.appcompat.widget.Toolbar>
 
     <!-- Status Toggle -->
-    <LinearLayout
-        android:id="@+id/ll_personal_status"
+    <RadioGroup
+        android:id="@+id/rg_personal_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:gravity="center_vertical"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbar">
 
-        <View
-            android:id="@+id/personal_dot_focus"
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:background="@drawable/circle_pink" />
-
-        <TextView
+        <RadioButton
+            android:id="@+id/rb_personal_focus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:buttonTint="@color/selector_radio_focus"
+            android:checked="true"
             android:text="@string/focus"
-            android:textColor="@color/black" />
+            android:textColor="@color/selector_radio_focus" />
 
-        <View
-            android:id="@+id/personal_dot_rest"
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:layout_marginStart="24dp"
-            android:background="@drawable/circle_gray" />
-
-        <TextView
+        <RadioButton
+            android:id="@+id/rb_personal_rest"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="24dp"
+            android:buttonTint="@color/selector_radio_rest"
             android:text="@string/rest"
-            android:textColor="@color/black" />
+            android:textColor="@color/selector_radio_rest" />
 
-    </LinearLayout>
+    </RadioGroup>
 
     <!-- Timer Circle -->
     <com.example.pocussharing.TimerView
@@ -73,7 +63,7 @@
         android:layout_marginTop="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ll_personal_status" />
+        app:layout_constraintTop_toBottomOf="@id/rg_personal_status" />
 
     <!-- Digital Timer -->
     <TextView

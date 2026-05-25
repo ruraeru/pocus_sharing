@@ -52,7 +52,8 @@ public class GroupDetailActivity extends AppCompatActivity {
     // Personal Timer Fields
     private TimerView personalTimerView;
     private TextView tvPersonalDigitalTimer;
-    private View personalDotFocus, personalDotRest;
+    private android.widget.RadioGroup rgPersonalStatus;
+    private android.widget.RadioButton rbPersonalFocus, rbPersonalRest;
     private Handler handler = new Handler(Looper.getMainLooper());
     
     private long sessionStartTimeMillis;
@@ -102,8 +103,9 @@ public class GroupDetailActivity extends AppCompatActivity {
         // Personal Timer Views
         personalTimerView = findViewById(R.id.personal_timer_view);
         tvPersonalDigitalTimer = findViewById(R.id.tv_personal_digital_timer);
-        personalDotFocus = findViewById(R.id.personal_dot_focus);
-        personalDotRest = findViewById(R.id.personal_dot_rest);
+        rgPersonalStatus = findViewById(R.id.rg_personal_status);
+        rbPersonalFocus = findViewById(R.id.rb_personal_focus);
+        rbPersonalRest = findViewById(R.id.rb_personal_rest);
 
         personalTimerView.setOnTimerDialListener(new TimerView.OnTimerDialListener() {
             @Override
@@ -121,8 +123,13 @@ public class GroupDetailActivity extends AppCompatActivity {
             }
         });
 
-        personalDotFocus.setOnClickListener(v -> setMode(true));
-        personalDotRest.setOnClickListener(v -> setMode(false));
+        rgPersonalStatus.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.rb_personal_focus) {
+                if (!isFocusMode) setMode(true);
+            } else if (checkedId == R.id.rb_personal_rest) {
+                if (isFocusMode) setMode(false);
+            }
+        });
 
         RecyclerView rvMembers = findViewById(R.id.rv_members);
         rvMembers.setLayoutManager(new GridLayoutManager(this, 2));
@@ -162,6 +169,12 @@ public class GroupDetailActivity extends AppCompatActivity {
         totalSessionTime = isFocus ? FOCUS_TIME : REST_TIME;
         timeLeft = totalSessionTime;
         updatePersonalUI(timeLeft);
+
+        if (isFocus) {
+            rbPersonalFocus.setChecked(true);
+        } else {
+            rbPersonalRest.setChecked(true);
+        }
     }
 
     private void updatePersonalUI(long millis) {

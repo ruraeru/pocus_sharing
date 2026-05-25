@@ -49,7 +49,8 @@ public class HomeFragment extends Fragment {
 
     private boolean isRunning = false;
     private boolean isFocusMode = true;
-    private View dotFocus, dotRest;
+    private android.widget.RadioGroup rgStatus;
+    private android.widget.RadioButton rbFocus, rbRest;
     private LinearLayout llTable;
     private int recordCount = 0; 
     private long totalCumulativeMillis = 0;
@@ -70,8 +71,9 @@ public class HomeFragment extends Fragment {
         tvDate = view.findViewById(R.id.tv_date);
         ivProfile = view.findViewById(R.id.iv_profile);
         llTable = view.findViewById(R.id.ll_table);
-        dotFocus = view.findViewById(R.id.dot_focus);
-        dotRest = view.findViewById(R.id.dot_rest);
+        rgStatus = view.findViewById(R.id.rg_status);
+        rbFocus = view.findViewById(R.id.rb_focus);
+        rbRest = view.findViewById(R.id.rb_rest);
 
         // Set date
         String dateStr = new java.text.SimpleDateFormat("M월 d일", Locale.KOREA).format(new Date());
@@ -93,8 +95,13 @@ public class HomeFragment extends Fragment {
             }
         });
         
-        dotFocus.setOnClickListener(v -> setMode(true));
-        dotRest.setOnClickListener(v -> setMode(false));
+        rgStatus.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.rb_focus) {
+                if (!isFocusMode) setMode(true);
+            } else if (checkedId == R.id.rb_rest) {
+                if (isFocusMode) setMode(false);
+            }
+        });
 
         updateUI(totalSessionTime);
         loadUserProfile();
@@ -227,6 +234,12 @@ public class HomeFragment extends Fragment {
         totalSessionTime = isFocus ? FOCUS_TIME : REST_TIME;
         timeLeft = totalSessionTime;
         updateUI(timeLeft);
+
+        if (isFocus) {
+            rbFocus.setChecked(true);
+        } else {
+            rbRest.setChecked(true);
+        }
     }
 
     private void updateUI(long millis) {
