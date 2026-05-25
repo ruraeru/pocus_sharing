@@ -130,15 +130,12 @@ public class HomeFragment extends Fragment {
     }
 
     private void updateLogsTable(List<com.google.firebase.firestore.DocumentSnapshot> docs) {
-        // Clear current table (except header)
-        int childCount = llTable.getChildCount();
-        if (childCount > 1) {
-            llTable.removeViews(1, childCount - 1);
-        }
+        // Clear current table
+        llTable.removeAllViews();
         recordCount = 0;
 
         List<com.google.firebase.firestore.DocumentSnapshot> mutableDocs = new ArrayList<>(docs);
-        // Sort in Java: oldest to newest (to add to table at index 1, effectively newest at top)
+        // Sort in Java: oldest to newest (to add to table at index 0, effectively newest at top)
         Collections.sort(mutableDocs, (d1, d2) -> {
             com.google.firebase.Timestamp t1 = d1.getTimestamp("createdAt");
             com.google.firebase.Timestamp t2 = d2.getTimestamp("createdAt");
@@ -181,7 +178,7 @@ public class HomeFragment extends Fragment {
         ((TextView) row.findViewById(R.id.tv_time)).setText(timeStr);
         ((TextView) row.findViewById(R.id.tv_type)).setText(typeStr);
 
-        llTable.addView(row, 1);
+        llTable.addView(row, 0);
     }
 
     private void loadUserProfile() {
