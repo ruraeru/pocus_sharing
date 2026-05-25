@@ -233,15 +233,10 @@ public class HomeFragment extends Fragment {
         float progress = (float) millis / (60 * 60 * 1000); 
         timerView.setProgress(progress);
         
-        long displayMillis = totalCumulativeMillis;
-        if (isRunning && isFocusMode) {
-            displayMillis += (totalSessionTime - timeLeft);
-        }
-        
         if (isRunning) {
             syncStatusToRtdb();
         }
-        updateDigitalTimer(displayMillis);
+        updateDigitalTimer(millis);
     }
 
     private void syncStatusToRtdb() {

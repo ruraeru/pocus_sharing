@@ -24,84 +24,78 @@
 
     </androidx.appcompat.widget.Toolbar>
 
-    <!-- Personal Timer Section (Compact) -->
+    <!-- Status Toggle -->
     <LinearLayout
-        android:id="@+id/ll_personal_timer"
-        android:layout_width="match_parent"
+        android:id="@+id/ll_personal_status"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="16dp"
+        android:layout_marginTop="16dp"
         android:gravity="center_vertical"
-        android:background="#F5F5F5"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbar">
 
-        <!-- Timer Circle -->
-        <com.example.pocussharing.TimerView
-            android:id="@+id/personal_timer_view"
-            android:layout_width="80dp"
-            android:layout_height="80dp" />
+        <View
+            android:id="@+id/personal_dot_focus"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:background="@drawable/circle_pink" />
 
-        <LinearLayout
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginStart="16dp">
+            android:layout_marginStart="8dp"
+            android:text="@string/focus"
+            android:textColor="@color/black" />
 
-            <!-- Digital Timer -->
-            <TextView
-                android:id="@+id/tv_personal_digital_timer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="00:00:00"
-                android:textColor="@color/black"
-                android:textSize="24sp"
-                android:textStyle="bold" />
+        <View
+            android:id="@+id/personal_dot_rest"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginStart="24dp"
+            android:background="@drawable/circle_gray" />
 
-            <!-- Status Toggle -->
-            <LinearLayout
-                android:id="@+id/ll_personal_status"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/rest"
+            android:textColor="@color/black" />
 
-                <View
-                    android:id="@+id/personal_dot_focus"
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:background="@drawable/circle_pink" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:text="@string/focus"
-                    android:textColor="@color/black" />
-
-                <View
-                    android:id="@+id/personal_dot_rest"
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:layout_marginStart="16dp"
-                    android:background="@drawable/circle_gray" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:text="@string/rest"
-                    android:textColor="@color/black" />
-            </LinearLayout>
-        </LinearLayout>
     </LinearLayout>
+
+    <!-- Timer Circle -->
+    <com.example.pocussharing.TimerView
+        android:id="@+id/personal_timer_view"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ll_personal_status" />
+
+    <!-- Digital Timer -->
+    <TextView
+        android:id="@+id/tv_personal_digital_timer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="00:00:00"
+        android:textColor="@color/black"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/personal_timer_view" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_members"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_marginTop="16dp"
         android:padding="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ll_personal_timer" />
+        app:layout_constraintTop_toBottomOf="@id/tv_personal_digital_timer" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

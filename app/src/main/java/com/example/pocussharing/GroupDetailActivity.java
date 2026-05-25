@@ -168,15 +168,10 @@ public class GroupDetailActivity extends AppCompatActivity {
         float progress = (float) millis / (60 * 60 * 1000); 
         personalTimerView.setProgress(progress);
         
-        long displayMillis = totalCumulativeMillis;
-        if (isRunning && isFocusMode) {
-            displayMillis += (totalSessionTime - timeLeft);
-        }
-        
         if (isRunning) {
             syncStatusToRtdb();
         }
-        updateDigitalTimer(displayMillis);
+        updateDigitalTimer(millis);
     }
 
     private void updateDigitalTimer(long millis) {
