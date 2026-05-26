@@ -30,18 +30,16 @@ public class FirestoreRepository {
 
     // --- Group Operations ---
     public Task<DocumentReference> createGroup(Group group) {
-        return db.collection(GROUPS_COLLECTION).add(group)
-            .continueWithTask(task -> {
-                String groupId = task.getResult().getId();
-                group.setGroupId(groupId);
-                // Update doc with ID
-                db.collection(GROUPS_COLLECTION).document(groupId).set(group);
-                // Add creator as ADMIN member
-                GroupMember admin = new GroupMember(group.getAdminId(), "ADMIN");
-                return db.collection(GROUPS_COLLECTION).document(groupId)
-                    .collection("members").document(group.getAdminId()).set(admin)
-                    .continueWith(t -> task.getResult());
-            });
+        DocumentReference groupRef = db.collection(GROUPS_COLLECTION).document();
+        String groupId = groupRef.getId();
+        group.setGroupId(groupId);
+
+        GroupMember admin = new GroupMember(group.getAdminId(), "ADMIN");
+        WriteBatch batch = db.batch();
+        batch.set(groupRef, group);
+        batch.set(groupRef.collection("members").document(group.getAdminId()), admin);
+
+        return batch.commit().continueWith(task -> groupRef);
     }
 
     public Task<Void> joinGroup(String groupId, String userId) {
