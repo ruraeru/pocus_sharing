@@ -52,7 +52,8 @@ public class GroupDetailActivity extends AppCompatActivity {
     // Personal Timer Fields
     private TimerView personalTimerView;
     private TextView tvPersonalDigitalTimer;
-    private TextView tvGroupCodeDisplay;
+    private TextView tvGroupCodeValue;
+    private android.widget.LinearLayout llInviteCodeContainer;
     private android.widget.RadioGroup rgPersonalStatus;
     private android.widget.RadioButton rbPersonalFocus, rbPersonalRest;
     private Handler handler = new Handler(Looper.getMainLooper());
@@ -104,7 +105,8 @@ public class GroupDetailActivity extends AppCompatActivity {
         // Personal Timer Views
         personalTimerView = findViewById(R.id.personal_timer_view);
         tvPersonalDigitalTimer = findViewById(R.id.tv_personal_digital_timer);
-        tvGroupCodeDisplay = findViewById(R.id.tv_group_code_display);
+        tvGroupCodeValue = findViewById(R.id.tv_group_code_value);
+        llInviteCodeContainer = findViewById(R.id.ll_invite_code_container);
         rgPersonalStatus = findViewById(R.id.rg_personal_status);
         rbPersonalFocus = findViewById(R.id.rb_personal_focus);
         rbPersonalRest = findViewById(R.id.rb_personal_rest);
@@ -290,13 +292,15 @@ public class GroupDetailActivity extends AppCompatActivity {
                     btnManage.setVisibility(View.VISIBLE);
                 }
 
-                String codeText = "초대 코드: " + group.getGroupCode();
-                tvGroupCodeDisplay.setText(codeText);
-                tvGroupCodeDisplay.setOnClickListener(v -> {
-                    android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(android.content.Context.CLIPBOARD_SERVICE);
-                    android.content.ClipData clip = android.content.ClipData.newPlainText("Group Code", group.getGroupCode());
-                    clipboard.setPrimaryClip(clip);
-                    Toast.makeText(this, "초대 코드가 복사되었습니다.", Toast.LENGTH_SHORT).show();
+                String groupCode = group.getGroupCode();
+                tvGroupCodeValue.setText(groupCode != null ? groupCode : "없음");
+                llInviteCodeContainer.setOnClickListener(v -> {
+                    if (groupCode != null) {
+                        android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+                        android.content.ClipData clip = android.content.ClipData.newPlainText("Group Code", groupCode);
+                        clipboard.setPrimaryClip(clip);
+                        Toast.makeText(this, "초대 코드가 복사되었습니다.", Toast.LENGTH_SHORT).show();
+                    }
                 });
             }
         });

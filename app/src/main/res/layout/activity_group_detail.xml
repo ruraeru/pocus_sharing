@@ -24,18 +24,44 @@
 
     </androidx.appcompat.widget.Toolbar>
 
-    <TextView
-        android:id="@+id/tv_group_code_display"
+    <LinearLayout
+        android:id="@+id/ll_invite_code_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="초대 코드: -"
-        android:textColor="@color/text_gray"
-        android:textSize="14sp"
-        android:textStyle="bold"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_rounded_gray"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/toolbar" />
+        app:layout_constraintTop_toBottomOf="@id/toolbar">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="초대 코드: "
+            android:textColor="@color/text_gray"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tv_group_code_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:text="-"
+            android:textColor="@color/black"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginStart="12dp"
+            android:src="@android:drawable/ic_menu_edit"
+            app:tint="@color/text_gray" />
+    </LinearLayout>
 
     <!-- Status Toggle -->
     <RadioGroup
@@ -46,7 +72,7 @@
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_group_code_display">
+        app:layout_constraintTop_toBottomOf="@id/ll_invite_code_container">
 
         <RadioButton
             android:id="@+id/rb_personal_focus"
