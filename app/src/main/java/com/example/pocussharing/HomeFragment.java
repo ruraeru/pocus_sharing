@@ -332,6 +332,11 @@ public class HomeFragment extends Fragment {
             }
             stopTimer();
             addRecordToTable();
+
+            // 타이머 정지 시 자동으로 휴식 모드로 전환
+            if (isFocusMode) {
+                setMode(false);
+            }
         } else {
             if (timeLeft > 0) {
                 startTimer();
@@ -412,6 +417,11 @@ public class HomeFragment extends Fragment {
                 updateUI(timeLeft);
                 stopTimer();
                 addRecordToTable();
+
+                // 타이머 종료 시 자동으로 휴식 모드로 전환
+                if (isFocusMode) {
+                    setMode(false);
+                }
                 return;
             }
 

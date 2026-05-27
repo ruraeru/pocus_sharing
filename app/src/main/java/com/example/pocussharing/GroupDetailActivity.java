@@ -246,6 +246,11 @@ public class GroupDetailActivity extends AppCompatActivity {
             }
             stopTimer();
             saveLogToFirebase();
+
+            // 타이머 정지 시 자동으로 휴식 모드로 전환
+            if (isFocusMode) {
+                setMode(false);
+            }
         } else {
             if (timeLeft > 0) {
                 startTimer();
@@ -312,6 +317,11 @@ public class GroupDetailActivity extends AppCompatActivity {
                 updatePersonalUI(timeLeft);
                 stopTimer();
                 saveLogToFirebase();
+
+                // 타이머 종료 시 자동으로 휴식 모드로 전환
+                if (isFocusMode) {
+                    setMode(false);
+                }
                 return;
             }
 
@@ -513,6 +523,9 @@ public class GroupDetailActivity extends AppCompatActivity {
             
             // 순위 표시 (1부터 시작)
             holder.tvRank.setText(String.valueOf(position + 1));
+
+            if(position == 0) holder.tvRank.setTextColor(0xFFCC3333);
+
             holder.tvName.setText(status.getName());
 
             // 멤버의 현재 상태(집중/휴식) 설정
