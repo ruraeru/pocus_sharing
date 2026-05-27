@@ -254,8 +254,12 @@ public class HomeFragment extends Fragment {
      */
     private void setMode(boolean isFocus) {
         if (isRunning) {
+            long elapsed = totalSessionTime - timeLeft;
+            if (isFocusMode) {
+                totalCumulativeMillis += elapsed;
+            }
             stopTimer();
-            addRecordToTable(); // 현재까지의 기록 저장
+            addRecordToTable();
         }
         isFocusMode = isFocus;
         timerView.setMode(isFocus);

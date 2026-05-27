@@ -190,6 +190,10 @@ public class GroupDetailActivity extends AppCompatActivity {
      */
     private void setMode(boolean isFocus) {
         if (isRunning) {
+            long elapsed = totalSessionTime - timeLeft;
+            if (isFocusMode) {
+                totalCumulativeMillis += elapsed;
+            }
             stopTimer();
             saveLogToFirebase();
         }
