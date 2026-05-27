@@ -21,42 +21,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- 앱 서브 타이틀 -->
-    <TextView
-        android:id="@+id/tv_subtitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="집중의 가치를 나누는 시간"
-        android:textColor="@color/text_gray"
-        android:textSize="18sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_title" />
-
-    <!-- 카카오 로그인 버튼 이미지 -->
-    <ImageButton
+    <Button
         android:id="@+id/btn_kakao_login"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="100dp"
-        android:background="@android:color/transparent"
-        android:scaleType="centerInside"
-        android:src="@android:drawable/btn_default"
+        android:text="카카오톡으로 로그인"
+        android:backgroundTint="@color/yellow"
+        android:textColor="@color/black"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
     
-    <!-- 카카오 로그인 버튼 텍스트 레이블 -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="카카오톡으로 로그인"
-        android:textColor="@color/black"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@id/btn_kakao_login"
-        app:layout_constraintEnd_toEndOf="@id/btn_kakao_login"
-        app:layout_constraintStart_toStartOf="@id/btn_kakao_login"
-        app:layout_constraintTop_toTopOf="@id/btn_kakao_login" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -3,7 +3,7 @@ package com.example.pocussharing;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.ImageButton;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -43,7 +43,7 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         // 카카오 로그인 버튼 설정
-        ImageButton btnKakaoLogin = findViewById(R.id.btn_kakao_login);
+        Button btnKakaoLogin = findViewById(R.id.btn_kakao_login);
         btnKakaoLogin.setOnClickListener(v -> loginWithKakao());
     }
 

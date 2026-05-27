@@ -504,8 +504,12 @@ public class GroupDetailActivity extends AppCompatActivity {
             
             // 멤버의 현재 상태(집중/휴식) 및 진행률 설정
             holder.timerView.setMode(status.isFocus());
+            Log.d("focus", String.valueOf(status.isFocus()));
             float progress = (float) status.getTimeLeft() / (60 * 60 * 1000);
             holder.timerView.setProgress(progress);
+
+            holder.tvFocus.setText(status.isFocus() ? "집중" : "휴식");
+            holder.tvFocus.setTextColor(status.isFocus() ? 0xFFCC3333 : 0xFF4CAF50);
             
             // 남은 시간 텍스트 설정
             int seconds = (int) (status.getTimeLeft() / 1000);
@@ -531,13 +535,14 @@ public class GroupDetailActivity extends AppCompatActivity {
         public int getItemCount() { return list.size(); }
 
         static class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvName, tvTime, tvTotalToday;
+            TextView tvName, tvTime, tvTotalToday, tvFocus;
             TimerView timerView;
             ViewHolder(View v) {
                 super(v);
                 tvName = v.findViewById(R.id.tv_name);
                 tvTime = v.findViewById(R.id.tv_time);
                 tvTotalToday = v.findViewById(R.id.tv_total_today);
+                tvFocus = v.findViewById(R.id.tv_focus);
                 timerView = v.findViewById(R.id.timer_view);
             }
         }
