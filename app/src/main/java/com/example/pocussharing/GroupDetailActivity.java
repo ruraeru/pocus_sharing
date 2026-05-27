@@ -38,6 +38,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -460,6 +461,11 @@ public class GroupDetailActivity extends AppCompatActivity {
                         memberList.add(status);
                     }
                 }
+
+                // 오늘 총 집중 시간 기준 내림차순 정렬 (순위 매기기)
+                Collections.sort(memberList, (m1, m2) -> 
+                    Long.compare(m2.getTodayFocusTime(), m1.getTodayFocusTime()));
+
                 adapter.notifyDataSetChanged();
             }
 
@@ -500,6 +506,9 @@ public class GroupDetailActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             MemberStatus status = list.get(position);
+            
+            // 순위 표시 (1부터 시작)
+            holder.tvRank.setText(String.valueOf(position + 1));
             holder.tvName.setText(status.getName());
 
             // 멤버의 현재 상태(집중/휴식) 설정
@@ -518,7 +527,7 @@ public class GroupDetailActivity extends AppCompatActivity {
             long th = totalSec / 3600;
             long tm = (totalSec % 3600) / 60;
             long ts = totalSec % 60;
-            holder.tvTotalToday.setText(String.format(Locale.getDefault(), "오늘: %d시간 %d분 %d초", th, tm, ts));
+            holder.tvTotalToday.setText(String.format(Locale.getDefault(), "오늘\n %d시간 %d분 %d초", th, tm, ts));
 
             holder.itemView.setOnLongClickListener(v -> {
                 longClickListener.onLongClick(status);
@@ -530,9 +539,10 @@ public class GroupDetailActivity extends AppCompatActivity {
         public int getItemCount() { return list.size(); }
 
         static class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvName, tvTime, tvTotalToday, tvFocus;
+            TextView tvName, tvTime, tvTotalToday, tvFocus, tvRank;
             ViewHolder(View v) {
                 super(v);
+                tvRank = v.findViewById(R.id.tv_rank);
                 tvName = v.findViewById(R.id.tv_name);
                 tvTime = v.findViewById(R.id.tv_time);
                 tvTotalToday = v.findViewById(R.id.tv_total_today);
