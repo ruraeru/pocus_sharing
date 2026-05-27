@@ -45,9 +45,6 @@ public class LoginActivity extends AppCompatActivity {
         // 카카오 로그인 버튼 설정
         ImageButton btnKakaoLogin = findViewById(R.id.btn_kakao_login);
         btnKakaoLogin.setOnClickListener(v -> loginWithKakao());
-
-        // 로그인 우회 버튼 설정 (테스트용)
-        findViewById(R.id.btn_bypass_login).setOnClickListener(v -> navigateToMain());
     }
 
     /**
