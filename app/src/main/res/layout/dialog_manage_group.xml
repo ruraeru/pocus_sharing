@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 그룹 관리 다이얼로그 레이아웃: 이름 수정, 최대 인원 설정 및 그룹 삭제 기능 제공 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="24dp">
 
+    <!-- 다이얼로그 제목 -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -13,6 +15,7 @@
         android:textSize="20sp"
         android:textStyle="bold" />
 
+    <!-- 그룹 이름 수정 필드 -->
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -26,6 +29,7 @@
             android:inputType="text" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- 최대 인원수 설정 필드 -->
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -39,6 +43,7 @@
             android:inputType="number" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- 그룹 삭제 버튼 -->
     <Button
         android:id="@+id/btn_delete_group"
         android:layout_width="match_parent"

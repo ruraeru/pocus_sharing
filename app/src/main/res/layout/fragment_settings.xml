@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SettingsFragment 레이아웃: 프로필 관리 및 앱 설정 항목 포함 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -6,6 +7,7 @@
     android:background="@color/white"
     android:padding="16dp">
 
+    <!-- 화면 제목 -->
     <TextView
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
@@ -17,7 +19,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- User Profile Section -->
+    <!-- 사용자 프로필 이미지 표시 -->
     <ImageView
         android:id="@+id/iv_profile"
         android:layout_width="64dp"
@@ -29,6 +31,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_title" />
 
+    <!-- 사용자 닉네임 표시 -->
     <TextView
         android:id="@+id/tv_nickname_display"
         android:layout_width="wrap_content"
@@ -42,6 +45,7 @@
         app:layout_constraintStart_toEndOf="@id/iv_profile"
         app:layout_constraintTop_toTopOf="@id/iv_profile" />
 
+    <!-- 닉네임 변경 입력 라벨 -->
     <TextView
         android:id="@+id/tv_nickname_label"
         android:layout_width="wrap_content"
@@ -53,6 +57,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/iv_profile" />
 
+    <!-- 닉네임 입력 필드 -->
     <EditText
         android:id="@+id/et_nickname"
         android:layout_width="0dp"
@@ -63,6 +68,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_nickname_label" />
 
+    <!-- 닉네임 저장 버튼 -->
     <Button
         android:id="@+id/btn_save_nickname"
         android:layout_width="wrap_content"
@@ -72,6 +78,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/et_nickname" />
 
+    <!-- 앱 공통 설정 섹션 라벨 -->
     <TextView
         android:id="@+id/tv_app_settings_label"
         android:layout_width="wrap_content"
@@ -83,6 +90,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/et_nickname" />
 
+    <!-- 알람 끄기 옵션 스위치 -->
     <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/switch_alarm"
         android:layout_width="match_parent"
@@ -91,6 +99,7 @@
         android:text="알람 끄기"
         app:layout_constraintTop_toBottomOf="@id/tv_app_settings_label" />
 
+    <!-- 화면 꺼짐 방지 옵션 스위치 -->
     <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/switch_screen_on"
         android:layout_width="match_parent"
@@ -99,6 +108,7 @@
         android:text="화면 꺼짐 방지"
         app:layout_constraintTop_toBottomOf="@id/switch_alarm" />
 
+    <!-- 앱 나가기 방지 옵션 스위치 -->
     <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/switch_app_exit_prevention"
         android:layout_width="match_parent"
@@ -107,6 +117,7 @@
         android:text="앱 나가기 방지"
         app:layout_constraintTop_toBottomOf="@id/switch_screen_on" />
 
+    <!-- 로그아웃 버튼 -->
     <Button
         android:id="@+id/btn_logout"
         android:layout_width="match_parent"

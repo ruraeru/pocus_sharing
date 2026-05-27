@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- LoginActivity의 레이아웃: 서비스 로고와 카카오 로그인 버튼 포함 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -6,6 +7,7 @@
     android:background="@color/white"
     android:padding="32dp">
 
+    <!-- 앱 메인 타이틀 -->
     <TextView
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
@@ -19,6 +21,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- 앱 서브 타이틀 -->
     <TextView
         android:id="@+id/tv_subtitle"
         android:layout_width="wrap_content"
@@ -31,6 +34,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_title" />
 
+    <!-- 카카오 로그인 버튼 이미지 -->
     <ImageButton
         android:id="@+id/btn_kakao_login"
         android:layout_width="wrap_content"
@@ -43,6 +47,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
     
+    <!-- 카카오 로그인 버튼 텍스트 레이블 -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -54,6 +59,7 @@
         app:layout_constraintStart_toStartOf="@id/btn_kakao_login"
         app:layout_constraintTop_toTopOf="@id/btn_kakao_login" />
 
+    <!-- 개발용 로그인 건너뛰기 버튼 -->
     <Button
         android:id="@+id/btn_bypass_login"
         android:layout_width="wrap_content"

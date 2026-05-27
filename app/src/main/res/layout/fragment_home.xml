@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- HomeFragment 레이아웃: 개인 타이머 기능과 오늘 집중 기록을 표시 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -6,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="@color/white">
 
-    <!-- Header -->
+    <!-- 상단 헤더 영역: 앱 로고, 날짜, 프로필 이미지 -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
@@ -52,7 +53,7 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Status Toggle -->
+    <!-- 집중/휴식 상태 전환 라디오 그룹 -->
     <RadioGroup
         android:id="@+id/rg_status"
         android:layout_width="wrap_content"
@@ -83,7 +84,7 @@
 
     </RadioGroup>
 
-    <!-- Timer Circle -->
+    <!-- 중앙 대형 원형 타이머 뷰 -->
     <com.example.pocussharing.TimerView
         android:id="@+id/timer_view"
         android:layout_width="300dp"
@@ -93,7 +94,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/rg_status" />
 
-    <!-- Digital Timer -->
+    <!-- 디지털 시간 표시 -->
     <TextView
         android:id="@+id/tv_digital_timer"
         android:layout_width="wrap_content"
@@ -107,7 +108,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/timer_view" />
 
-    <!-- Table Header -->
+    <!-- 하단 집중 기록 테이블 헤더 -->
     <LinearLayout
         android:id="@+id/ll_table_header"
         android:layout_width="match_parent"
@@ -146,7 +147,7 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- Table -->
+    <!-- 집중 기록 리스트 영역 (스크롤뷰) -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -154,6 +155,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@id/ll_table_header">
 
+        <!-- 로그 아이템들이 동적으로 추가되는 레이아웃 -->
         <LinearLayout
             android:id="@+id/ll_table"
             android:layout_width="match_parent"

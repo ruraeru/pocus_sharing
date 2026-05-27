@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- GroupFragment 레이아웃: 내 그룹 목록을 보여주고 그룹 생성/참여 기능을 제공 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white">
 
+    <!-- 화면 제목 -->
     <TextView
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
@@ -18,6 +20,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- 그룹 리스트 표시 영역 -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_groups"
         android:layout_width="match_parent"
@@ -26,6 +29,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_title" />
 
+    <!-- 그룹 참여 버튼 (Floating Action Button) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_join"
         android:layout_width="wrap_content"
@@ -36,6 +40,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- 그룹 생성 버튼 (Floating Action Button) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_add"
         android:layout_width="wrap_content"

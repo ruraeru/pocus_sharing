@@ -18,6 +18,9 @@ import java.util.Map;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function2;
 
+/**
+ * LoginActivity: 카카오 로그인 및 Firebase 익명 인증을 처리하는 액티비티
+ */
 public class LoginActivity extends AppCompatActivity {
 
     private static final String TAG = "LoginActivity";
@@ -30,35 +33,40 @@ public class LoginActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
 
-        // Auto Login Check
+        // 자동 로그인 확인: 카카오 SDK를 통해 현재 로그인된 사용자가 있는지 확인
         UserApiClient.getInstance().me((user, error) -> {
             if (user != null) {
-                Log.i(TAG, "Auto login success. User nickname: " + user.getKakaoAccount().getProfile().getNickname());
+                Log.i(TAG, "자동 로그인 성공. 사용자 닉네임: " + user.getKakaoAccount().getProfile().getNickname());
                 firebaseSignIn();
             }
             return Unit.INSTANCE;
         });
 
+        // 카카오 로그인 버튼 설정
         ImageButton btnKakaoLogin = findViewById(R.id.btn_kakao_login);
         btnKakaoLogin.setOnClickListener(v -> loginWithKakao());
 
+        // 로그인 우회 버튼 설정 (테스트용)
         findViewById(R.id.btn_bypass_login).setOnClickListener(v -> navigateToMain());
     }
 
+    /**
+     * 카카오 로그인을 수행합니다.
+     */
     private void loginWithKakao() {
-        // Callback for login
+        // 로그인 결과 처리를 위한 콜백
         Function2<OAuthToken, Throwable, Unit> callback = (token, error) -> {
             if (error != null) {
-                Log.e(TAG, "Kakao Login failed", error);
+                Log.e(TAG, "카카오 로그인 실패", error);
                 Toast.makeText(LoginActivity.this, "로그인 실패: " + error.getMessage(), Toast.LENGTH_SHORT).show();
             } else if (token != null) {
-                Log.i(TAG, "Kakao Login success");
+                Log.i(TAG, "카카오 로그인 성공");
                 firebaseSignIn();
             }
             return Unit.INSTANCE;
         };
 
-        // If KakaoTalk is installed, login via KakaoTalk. Otherwise, via KakaoAccount (browser).
+        // 카카오톡이 설치되어 있으면 카카오톡으로 로그인, 아니면 카카오 계정(웹 브라우저)으로 로그인
         if (UserApiClient.getInstance().isKakaoTalkLoginAvailable(this)) {
             UserApiClient.getInstance().loginWithKakaoTalk(this, callback);
         } else {
@@ -66,54 +74,60 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Firestore 보안 규칙을 충족하기 위해 Firebase 익명 인증을 수행합니다.
+     */
     private void firebaseSignIn() {
-        // To satisfy Firestore rules, we sign in to Firebase anonymously
-        // In a real app, you would use Kakao's token to sign in to Firebase via a Custom Token
+        // 실제 앱에서는 카카오 토큰을 사용하여 커스텀 토큰 방식으로 로그인하는 것이 좋으나,
+        // 여기서는 간단하게 익명 인증을 사용합니다.
         mAuth.signInAnonymously().addOnCompleteListener(this, task -> {
             if (task.isSuccessful()) {
-                Log.d(TAG, "Firebase sign in success");
+                Log.d(TAG, "Firebase 익명 로그인 성공");
                 fetchUserInfo();
             } else {
-                Log.e(TAG, "Firebase sign in failure", task.getException());
-                fetchUserInfo(); // Still try to fetch info and navigate
+                Log.e(TAG, "Firebase 익명 로그인 실패", task.getException());
+                fetchUserInfo(); // 정보 조회 및 메인 이동을 위해 계속 진행
             }
         });
     }
 
+    /**
+     * 카카오로부터 사용자 정보를 가져오고 Firestore에 동기화합니다.
+     */
     private void fetchUserInfo() {
         UserApiClient.getInstance().me((user, error) -> {
             if (error != null) {
-                Log.e(TAG, "Failed to fetch user info", error);
-                navigateToMain(); // Proceed to main even if info fetch fails
+                Log.e(TAG, "사용자 정보 요청 실패", error);
+                navigateToMain(); // 정보 요청에 실패해도 일단 메인으로 이동
             } else if (user != null) {
                 String nickname = user.getKakaoAccount().getProfile().getNickname();
                 String profileImageUrl = user.getKakaoAccount().getProfile().getThumbnailImageUrl();
                 String kakaoId = String.valueOf(user.getId());
-                Log.i(TAG, "User info fetch success. Nickname: " + nickname);
+                Log.i(TAG, "사용자 정보 요청 성공. 닉네임: " + nickname);
                 
-                // Save/Update user in Firestore only if needed
+                // Firebase 인증 사용자가 있는 경우 Firestore에 사용자 정보 저장 또는 업데이트
                 if (mAuth.getCurrentUser() != null) {
                     String uid = mAuth.getCurrentUser().getUid();
                     com.example.pocussharing.repository.FirestoreRepository repo = new com.example.pocussharing.repository.FirestoreRepository();
                     
                     repo.getUser(uid).addOnCompleteListener(task -> {
                         if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
-                            // User exists, only update profile image and kakaoId, keep current nickname
+                            // 기존 사용자: 카카오 ID와 프로필 이미지만 업데이트 (닉네임은 사용자가 변경했을 수 있으므로 유지)
                             Map<String, Object> updates = new HashMap<>();
                             updates.put("kakaoId", kakaoId);
                             updates.put("profileImageUrl", profileImageUrl);
                             com.google.firebase.firestore.FirebaseFirestore.getInstance()
                                 .collection("users").document(uid)
                                 .update(updates)
-                                .addOnSuccessListener(aVoid -> Log.d(TAG, "Existing user updated (preserved nickname)"))
-                                .addOnFailureListener(e -> Log.e(TAG, "Failed to update existing user", e));
+                                .addOnSuccessListener(aVoid -> Log.d(TAG, "기존 사용자 정보 업데이트 성공 (닉네임 보존)"))
+                                .addOnFailureListener(e -> Log.e(TAG, "기존 사용자 정보 업데이트 실패", e));
                         } else {
-                            // New user, create full profile
+                            // 신규 사용자: 전체 프로필 생성
                             com.example.pocussharing.model.User firestoreUser = new com.example.pocussharing.model.User(uid, kakaoId, nickname);
                             firestoreUser.setProfileImageUrl(profileImageUrl);
                             repo.saveUser(firestoreUser)
-                                .addOnSuccessListener(aVoid -> Log.d(TAG, "New user saved to Firestore"))
-                                .addOnFailureListener(e -> Log.e(TAG, "Failed to save new user", e));
+                                .addOnSuccessListener(aVoid -> Log.d(TAG, "신규 사용자 Firestore 저장 성공"))
+                                .addOnFailureListener(e -> Log.e(TAG, "신규 사용자 Firestore 저장 실패", e));
                         }
                     });
                 }
@@ -125,6 +139,9 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * 메인 화면으로 이동합니다.
+     */
     private void navigateToMain() {
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
