@@ -515,7 +515,7 @@ public class GroupDetailActivity extends AppCompatActivity {
             holder.tvTime.setText(String.format(Locale.getDefault(), "%02d:%02d:%02d", h, m, s));
 
             // 오늘 총 집중 시간 표시
-            long totalSec = status.getTotalTodayFocus() / 1000;
+            long totalSec = status.getTodayFocusTime() / 1000;
             long th = totalSec / 3600;
             long tm = (totalSec % 3600) / 60;
             long ts = totalSec % 60;
