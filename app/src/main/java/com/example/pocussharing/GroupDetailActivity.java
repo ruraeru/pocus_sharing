@@ -208,6 +208,9 @@ public class GroupDetailActivity extends AppCompatActivity {
         } else {
             rbPersonalRest.setChecked(true);
         }
+
+        // 모드 변경 후 즉시 상태 동기화 (UI 갱신 유도)
+        syncStatusToRtdb();
     }
 
     /**
@@ -217,6 +220,7 @@ public class GroupDetailActivity extends AppCompatActivity {
         float progress = (float) millis / (60 * 60 * 1000); 
         personalTimerView.setProgress(progress);
         
+        // 타이머가 작동 중일 때만 주기적으로 동기화 (정지 시엔 setMode나 stopTimer에서 별도 호출)
         if (isRunning) {
             syncStatusToRtdb();
         }
@@ -337,6 +341,7 @@ public class GroupDetailActivity extends AppCompatActivity {
         if (currentUserId == null) return;
         
         long totalTodayFocus = totalCumulativeMillis;
+        // 실행 중인 경우 현재까지의 미기록 집중 시간을 합산하여 표시
         if (isRunning && isFocusMode) {
             totalTodayFocus += (totalSessionTime - timeLeft);
         }

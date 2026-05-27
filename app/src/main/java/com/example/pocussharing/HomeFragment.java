@@ -272,6 +272,9 @@ public class HomeFragment extends Fragment {
         } else {
             rbRest.setChecked(true);
         }
+
+        // 모드 변경 후 즉시 상태 동기화 (UI 갱신 유도)
+        syncStatusToRtdb();
     }
 
     /**
@@ -281,6 +284,7 @@ public class HomeFragment extends Fragment {
         float progress = (float) millis / (60 * 60 * 1000); 
         timerView.setProgress(progress);
         
+        // 타이머가 작동 중일 때만 주기적으로 동기화 (정지 시엔 setMode나 stopTimer에서 별도 호출)
         if (isRunning) {
             syncStatusToRtdb();
         }
@@ -351,6 +355,7 @@ public class HomeFragment extends Fragment {
         isRunning = false;
         handler.removeCallbacks(timerRunnable);
         updateUI(timeLeft);
+        syncStatusToRtdb(); // 최종 상태 동기화
     }
 
     /**
