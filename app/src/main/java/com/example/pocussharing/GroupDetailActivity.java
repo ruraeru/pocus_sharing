@@ -23,7 +23,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.pocussharing.model.Group;
@@ -151,7 +151,7 @@ public class GroupDetailActivity extends AppCompatActivity {
 
         // 그룹 멤버 리사이클러뷰 설정
         RecyclerView rvMembers = findViewById(R.id.rv_members);
-        rvMembers.setLayoutManager(new GridLayoutManager(this, 2)); // 2열 그리드
+        rvMembers.setLayoutManager(new LinearLayoutManager(this)); // 세로 리스트 형태
         adapter = new MemberAdapter(memberList, this::onMemberLongClick);
         rvMembers.setAdapter(adapter);
 
@@ -501,13 +501,8 @@ public class GroupDetailActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             MemberStatus status = list.get(position);
             holder.tvName.setText(status.getName());
-            
-            // 멤버의 현재 상태(집중/휴식) 및 진행률 설정
-            holder.timerView.setMode(status.isFocus());
-            Log.d("focus", String.valueOf(status.isFocus()));
-            float progress = (float) status.getTimeLeft() / (60 * 60 * 1000);
-            holder.timerView.setProgress(progress);
 
+            // 멤버의 현재 상태(집중/휴식) 설정
             holder.tvFocus.setText(status.isFocus() ? "집중" : "휴식");
             holder.tvFocus.setTextColor(status.isFocus() ? 0xFFCC3333 : 0xFF4CAF50);
             
@@ -536,14 +531,12 @@ public class GroupDetailActivity extends AppCompatActivity {
 
         static class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvName, tvTime, tvTotalToday, tvFocus;
-            TimerView timerView;
             ViewHolder(View v) {
                 super(v);
                 tvName = v.findViewById(R.id.tv_name);
                 tvTime = v.findViewById(R.id.tv_time);
                 tvTotalToday = v.findViewById(R.id.tv_total_today);
                 tvFocus = v.findViewById(R.id.tv_focus);
-                timerView = v.findViewById(R.id.timer_view);
             }
         }
     }

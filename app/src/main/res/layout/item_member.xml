@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- item_member: 그룹 상세 화면에서 멤버들의 상태를 표시하는 개별 항목 레이아웃 -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -11,11 +10,10 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:padding="16dp">
 
-        <!-- 멤버 이름 -->
         <TextView
             android:id="@+id/tv_name"
             android:layout_width="wrap_content"
@@ -24,38 +22,30 @@
             android:textColor="@color/black"
             android:textStyle="bold" />
 
-        <!-- 멤버의 실시간 상태를 보여주는 소형 타이머 뷰 -->
-        <com.example.pocussharing.TimerView
-            android:id="@+id/timer_view"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:layout_marginTop="8dp" />
-
-        <!-- 멤버의 남은 시간 표시 -->
         <TextView
             android:id="@+id/tv_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginStart="12dp"
             android:text="25:00"
             android:textColor="@color/black" />
 
-        <!-- 멤버의 오늘 누적 집중 시간 표시 -->
         <TextView
             android:id="@+id/tv_total_today"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginStart="12dp"
             android:text="오늘: 0시간 0분"
             android:textColor="@color/text_gray"
             android:textSize="12sp" />
+
         <TextView
             android:id="@+id/tv_focus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
             android:text="집중"
-            android:textSize="12sp"
-            />
+            android:textSize="12sp" />
 
     </LinearLayout>
 
