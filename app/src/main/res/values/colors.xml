@@ -5,6 +5,7 @@
     <color name="pocus_red">#CC3333</color>
     <color name="pocus_pink">#FFC1C1</color>
     <color name="pocus_gray">#CCCCCC</color>
+    <color name="pocus_green">#4CAF50</color>
     <color name="text_gray">#666666</color>
     <color name="nav_background">#E0E0E0</color>
 </resources>

@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.AttributeSet;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -30,8 +31,8 @@ public class TimerView extends View {
     private Paint textPaint;
     private Paint centerPaint;
     private RectF arcBounds;
-
     private float progress = 0.0f;
+    private int lastSnappedMinute = -1;
 
     public void setProgress(float progress) {
         this.progress = Math.min(1.0f, Math.max(0.0f, progress));
@@ -42,7 +43,7 @@ public class TimerView extends View {
         if (isFocus) {
             arcPaint.setColor(0xFFCC3333); // pocus_red
         } else {
-            arcPaint.setColor(0xFFCCCCCC); // pocus_gray or another rest color
+            arcPaint.setColor(0xFF4CAF50); // pocus_green
         }
         invalidate();
     }
@@ -142,14 +143,22 @@ public class TimerView extends View {
                 angle += 90;
                 if (angle < 0) angle += 360;
                 
-                float newProgress = (float) (angle / 360f);
-                setProgress(newProgress);
+                float rawProgress = (float) (angle / 360f);
+                int minutes = Math.round(rawProgress * 60);
                 
-                if (dialListener != null) {
-                    dialListener.onDialChanged(newProgress);
+                if (minutes != lastSnappedMinute) {
+                    lastSnappedMinute = minutes;
+                    float snappedProgress = minutes / 60f;
+                    setProgress(snappedProgress);
+                    
+                    if (dialListener != null) {
+                        dialListener.onDialChanged(snappedProgress);
+                    }
+                    performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
                 }
                 return true;
             case MotionEvent.ACTION_UP:
+                lastSnappedMinute = -1;
                 // If it was just a click (or very small move), toggle timer
                 // For simplicity here, just callback to select
                 if (dialListener != null) {
