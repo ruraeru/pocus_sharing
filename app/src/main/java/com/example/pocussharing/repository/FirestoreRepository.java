@@ -205,15 +205,6 @@ public class FirestoreRepository {
     }
 
     /**
-     * 사용자의 최근 타이머 로그 목록을 가져옵니다.
-     */
-    public Task<QuerySnapshot> getRecentTimerLogs(String userId) {
-        return db.collection(TIMER_LOGS_COLLECTION)
-                .whereEqualTo("user_id", userId)
-                .get();
-    }
-
-    /**
      * 사용자의 타이머 로그 실시간 감시 리스너를 등록합니다.
      */
     public ListenerRegistration getTimerLogsListener(String userId, EventListener<QuerySnapshot> listener) {

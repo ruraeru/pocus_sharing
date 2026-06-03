@@ -29,6 +29,4 @@ public class GroupMember {
     public void setUserId(String userId) { this.userId = userId; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
-    public Timestamp getJoinedAt() { return joinedAt; }
-    public void setJoinedAt(Timestamp joinedAt) { this.joinedAt = joinedAt; }
 }

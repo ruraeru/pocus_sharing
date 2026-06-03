@@ -15,8 +15,6 @@ import androidx.navigation.ui.NavigationUI;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 
-import java.util.concurrent.Executor;
-
 /**
  * MainActivity: 앱의 주요 화면을 관리하고 네비게이션을 담당하는 메인 액티비티
  */
@@ -66,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void signInAnonymously() {
         mAuth.signInAnonymously()
-            .addOnCompleteListener((Executor) this, task -> {
+            .addOnCompleteListener(this, task -> {
                 if (task.isSuccessful()) {
                     Log.d("MainActivity", "Firebase 익명 로그인 성공");
                 } else {

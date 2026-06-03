@@ -79,7 +79,7 @@ public class GroupFragment extends Fragment {
         if (uid == null) return;
 
         // 기존 리스너가 있으면 먼저 제거
-        if (groupsListener != null) logsListenerRemove(); 
+        groupsListenerRemove(); 
 
         groupsListener = repository.getUserGroupsListener(uid, (value, error) -> {
             if (error != null) {
@@ -104,7 +104,7 @@ public class GroupFragment extends Fragment {
     /**
      * 리스너 등록을 해제합니다.
      */
-    private void logsListenerRemove() {
+    private void groupsListenerRemove() {
         if (groupsListener != null) {
             groupsListener.remove();
             groupsListener = null;
@@ -215,7 +215,7 @@ public class GroupFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        logsListenerRemove(); // 화면 종료 시 리스너 해제
+        groupsListenerRemove(); // 화면 종료 시 리스너 해제
     }
 
     /**
