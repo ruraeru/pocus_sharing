@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- GroupDetailActivity의 메인 레이아웃: 그룹 상세 정보와 멤버들의 실시간 상태를 표시 -->
+<!-- 그룹 상세 정보와 멤버들의 실시간 상태를 표시 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -14,7 +14,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:title="그룹 상세">
 
-        <!-- 그룹 관리 버튼 (관리자에게만 보임) -->
+        <!-- 그룹 관리 버튼 (그룹장에게만 보임) -->
         <ImageButton
             android:id="@+id/btn_manage"
             android:layout_width="wrap_content"
