@@ -1,22 +1,19 @@
-/**
- * GroupDetailActivity.java
- * 특정 그룹의 상세 정보를 보여주고, 그룹 멤버들의 실시간 타이머 상태를 확인하며
- * 개인 타이머 기능을 수행하는 액티비티입니다.
- * 그룹 관리자 기능(정보 수정, 멤버 추방, 그룹 삭제)과 실시간 상태 동기화 기능을 포함합니다.
- */
 package com.example.pocussharing;
 
 import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,12 +35,17 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+/**
+ * 특정 그룹의 상세 정보를 보여주고, 그룹 멤버들의 실시간 타이머 상태를 확인하며
+ * 개인 타이머 기능을 수행하는 액티비티
+ * 그룹 관리자 기능(정보 수정, 멤버 추방, 그룹 삭제)과 실시간 상태 동기화 기능을 포함
+ */
 
 public class GroupDetailActivity extends AppCompatActivity {
 
@@ -52,29 +54,26 @@ public class GroupDetailActivity extends AppCompatActivity {
     private RtdbRepository rtdbRepository; // 실시간 데이터베이스 저장소
     private FirestoreRepository firestoreRepository; // Firestore 저장소
     private MemberAdapter adapter;        // 그룹 멤버 목록 어댑터
-    private List<MemberStatus> memberList = new ArrayList<>(); // 멤버 상태 리스트
+    private final List<MemberStatus> memberList = new ArrayList<>(); // 멤버 상태 리스트
     private Group group;                  // 그룹 정보 객체
-    private ImageButton btnManage;        // 그룹 관리 버튼 (방장 전용)
+    private ImageButton btnManage;        // 그룹 관리 버튼 (그룹장 전용)
 
     // 개인 타이머 관련 뷰 및 필드
     private TimerView personalTimerView;
     private TextView tvPersonalDigitalTimer;
     private TextView tvGroupCodeValue;
-    private android.widget.LinearLayout llInviteCodeContainer;
-    private android.widget.RadioGroup rgPersonalStatus;
-    private android.widget.RadioButton rbPersonalFocus, rbPersonalRest;
-    private Handler handler = new Handler(Looper.getMainLooper());
+    private LinearLayout llInviteCodeContainer;
+    private RadioButton rbPersonalFocus, rbPersonalRest;
+    private final Handler handler = new Handler(Looper.getMainLooper());
     
     private long sessionStartTimeMillis; // 세션 시작 시간
     private long timeLeft = 25 * 60 * 1000; // 남은 시간 (기본 25분)
     private long totalSessionTime = 25 * 60 * 1000; // 설정된 전체 세션 시간
-    private final long FOCUS_TIME = 25 * 60 * 1000; // 집중 기본 시간 (25분)
-    private final long REST_TIME = 5 * 60 * 1000;   // 휴식 기본 시간 (5분)
 
     private boolean isRunning = false;     // 타이머 실행 여부
-    private boolean isFocusMode = true;    // 집중 모드 여부
+    private final boolean isFocusMode = true;    // 집중 모드 여부
     private long totalCumulativeMillis = 0; // 오늘 누적 집중 시간
-    private String userNickname = "GUEST";  // 사용자 닉네임
+    private String userNickname = "";  // 사용자 닉네임
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,7 +100,7 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 레이아웃 뷰 초기화 및 이벤트 리스너를 설정합니다.
+     * 레이아웃 뷰 초기화 및 이벤트 리스너를 설정하는 함수
      */
     private void initViews(String groupName) {
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -120,7 +119,7 @@ public class GroupDetailActivity extends AppCompatActivity {
         tvPersonalDigitalTimer = findViewById(R.id.tv_personal_digital_timer);
         tvGroupCodeValue = findViewById(R.id.tv_group_code_value);
         llInviteCodeContainer = findViewById(R.id.ll_invite_code_container);
-        rgPersonalStatus = findViewById(R.id.rg_personal_status);
+        RadioGroup rgPersonalStatus = findViewById(R.id.rg_personal_status);
         rbPersonalFocus = findViewById(R.id.rb_personal_focus);
         rbPersonalRest = findViewById(R.id.rb_personal_rest);
 
@@ -160,21 +159,20 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 사용자의 프로필(닉네임)을 Firestore에서 불러옵니다.
+     * 사용자의 프로필(닉네임)을 Firestore에서 불러오는 함수
      */
     private void loadUserProfile() {
         if (currentUserId != null) {
             firestoreRepository.getUser(currentUserId).addOnSuccessListener(documentSnapshot -> {
                 if (documentSnapshot.exists()) {
                     userNickname = documentSnapshot.getString("nickname");
-                    if (userNickname == null) userNickname = "GUEST";
                 }
             });
         }
     }
 
     /**
-     * 오늘의 누적 집중 시간을 불러옵니다.
+     * 오늘의 누적 집중 시간을 불러오는 함수
      */
     private void loadTodayStats() {
         if (currentUserId != null) {
@@ -186,19 +184,22 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 타이머 모드를 변경합니다. (집중 <-> 휴식)
+     * 타이머 모드를 변경하는 함수. (집중 <-> 휴식)
      */
     private void setMode(boolean isFocus) {
         if (isRunning) {
             long elapsed = totalSessionTime - timeLeft;
-            if (isFocusMode) {
+            if (isFocus) {
                 totalCumulativeMillis += elapsed;
             }
             stopTimer();
             saveLogToFirebase();
         }
-        isFocusMode = isFocus;
         personalTimerView.setMode(isFocus);
+
+        long FOCUS_TIME = 25 * 60 * 1000; // 집중 기본 시간 (25분)
+        long REST_TIME = 5 * 60 * 1000; // 휴식 기본 시간 (5분)
+
         totalSessionTime = isFocus ? FOCUS_TIME : REST_TIME;
         timeLeft = totalSessionTime;
         updatePersonalUI(timeLeft);
@@ -214,13 +215,13 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 개인 타이머의 UI를 업데이트하고 실시간 상태를 서버에 동기화합니다.
+     * 개인 타이머의 UI를 업데이트하고 실시간 상태를 서버에 동기화하는 함수
      */
     private void updatePersonalUI(long millis) {
         float progress = (float) millis / (60 * 60 * 1000); 
         personalTimerView.setProgress(progress);
         
-        // 타이머가 작동 중일 때만 주기적으로 동기화 (정지 시엔 setMode나 stopTimer에서 별도 호출)
+        // 타이머가 작동 중일 때만 주기적으로 동기화
         if (isRunning) {
             syncStatusToRtdb();
         }
@@ -228,7 +229,7 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 디지털 타이머 형식(HH:mm:ss)으로 텍스트를 업데이트합니다.
+     * 디지털 타이머 형식(HH:mm:ss)으로 텍스트를 업데이트하는 함수
      */
     private void updateDigitalTimer(long millis) {
         int seconds = (int) (millis / 1000);
@@ -240,7 +241,7 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 타이머 시작 또는 일시정지를 토글합니다.
+     * 타이머 시작 또는 일시정지를 토글하는 함수
      */
     private void toggleTimer() {
         if (isRunning) {
@@ -263,7 +264,7 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 타이머를 중지하고 핸들러 콜백을 제거합니다.
+     * 타이머를 중지하고 핸들러 콜백을 제거하는 함수
      */
     private void stopTimer() {
         isRunning = false;
@@ -273,7 +274,7 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 타이머를 시작합니다.
+     * 타이머를 시작하는 함수
      */
     private void startTimer() {
         if (!isRunning) {
@@ -284,7 +285,7 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 완료된 타이머 세션 기록을 Firestore에 저장합니다.
+     * 완료된 타이머 세션 기록을 Firestore에 저장하는 함수
      */
     private void saveLogToFirebase() {
         long currentSessionElapsed = totalSessionTime - timeLeft;
@@ -302,14 +303,14 @@ public class GroupDetailActivity extends AppCompatActivity {
         );
 
         firestoreRepository.saveTimerLog(log)
-            .addOnSuccessListener(aVoid -> Log.d("GroupDetail", "Timer log saved"))
-            .addOnFailureListener(e -> Log.e("GroupDetail", "Failed to save log", e));
+            .addOnSuccessListener(aVoid -> Log.d("GroupDetail", "타이머 로그 저장 성공"))
+            .addOnFailureListener(e -> Log.e("GroupDetail", "타이머 로그 저장 실패", e));
     }
 
     /**
-     * 타이머를 1초마다 감소시키는 런어블 객체입니다.
+     * 타이머를 1초마다 감소시키는 Runnable 객체
      */
-    private Runnable timerRunnable = new Runnable() {
+    private final Runnable timerRunnable = new Runnable() {
         @Override
         public void run() {
             timeLeft -= 1000;
@@ -335,11 +336,11 @@ public class GroupDetailActivity extends AppCompatActivity {
     };
 
     /**
-     * 현재 사용자의 상태를 실시간 데이터베이스에 업데이트합니다.
+     * 현재 사용자의 상태를 Firebase RTDB에 저장하는 함수
      */
     private void syncStatusToRtdb() {
         if (currentUserId == null) return;
-        
+
         long totalTodayFocus = totalCumulativeMillis;
         // 실행 중인 경우 현재까지의 미기록 집중 시간을 합산하여 표시
         if (isRunning && isFocusMode) {
@@ -350,7 +351,7 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 그룹 메타데이터 정보를 Firestore에서 불러옵니다.
+     * 그룹 정보를 Firestore에서 불러오는 함수
      */
     private void loadGroupInfo() {
         if (groupId.equals("main_group")) return;
@@ -359,7 +360,7 @@ public class GroupDetailActivity extends AppCompatActivity {
             group = documentSnapshot.toObject(Group.class);
             if (group != null) {
                 group.setGroupId(documentSnapshot.getId());
-                // 방장인 경우 관리 버튼 표시
+                // 그룹장인 경우 관리 버튼 표시
                 if (group.getAdminId().equals(currentUserId)) {
                     btnManage.setVisibility(View.VISIBLE);
                 }
@@ -369,8 +370,8 @@ public class GroupDetailActivity extends AppCompatActivity {
                 tvGroupCodeValue.setText(groupCode != null ? groupCode : "없음");
                 llInviteCodeContainer.setOnClickListener(v -> {
                     if (groupCode != null) {
-                        android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(android.content.Context.CLIPBOARD_SERVICE);
-                        android.content.ClipData clip = android.content.ClipData.newPlainText("Group Code", groupCode);
+                        ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+                        ClipData clip = android.content.ClipData.newPlainText("Group Code", groupCode);
                         clipboard.setPrimaryClip(clip);
                         Toast.makeText(this, "초대 코드가 복사되었습니다.", Toast.LENGTH_SHORT).show();
                     }
@@ -380,7 +381,7 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 그룹 관리(수정/삭제) 다이얼로그를 표시합니다.
+     * 그룹 관리(수정/삭제) 다이얼로그를 표시
      */
     private void showManageGroupDialog() {
         if (group == null) return;
@@ -435,21 +436,18 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 그룹을 Firestore 및 실시간 데이터베이스에서 삭제합니다.
+     * 그룹을 Firestore 및 실시간 데이터베이스에서 삭제하는 함수
      */
     private void deleteGroup() {
         firestoreRepository.deleteGroup(groupId).addOnSuccessListener(aVoid -> {
             rtdbRepository.deleteGroupPresence(groupId);
             Toast.makeText(this, "그룹이 삭제되었습니다.", Toast.LENGTH_SHORT).show();
             finish();
-        }).addOnFailureListener(e -> {
-            Log.e("GroupDetail", "Failed to delete group", e);
-            Toast.makeText(this, "그룹 삭제 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        });
+        }).addOnFailureListener(e -> Toast.makeText(this, "그룹 삭제 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show() );
     }
 
     /**
-     * 멤버 카드 롱클릭 시 멤버 내보내기 다이얼로그를 표시합니다.
+     * 멤버 카드 롱클릭 시 멤버 내보내기 다이얼로그를 표시
      */
     private void onMemberLongClick(MemberStatus status) {
         if (group != null && group.getAdminId().equals(currentUserId) && !status.getUserId().equals(currentUserId)) {
@@ -467,7 +465,7 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 실시간 데이터베이스로부터 그룹 멤버들의 상태 변경을 감시합니다.
+     * 실시간 데이터베이스로부터 그룹 멤버들의 상태 변경을 감시
      */
     private void listenToPresence() {
         rtdbRepository.getGroupPresenceRef(groupId).addValueEventListener(new ValueEventListener() {
@@ -482,8 +480,8 @@ public class GroupDetailActivity extends AppCompatActivity {
                 }
 
                 // 오늘 총 집중 시간 기준 내림차순 정렬 (순위 매기기)
-                Collections.sort(memberList, (m1, m2) -> 
-                    Long.compare(m2.getTodayFocusTime(), m1.getTodayFocusTime()));
+                memberList.sort((m1, m2) ->
+                        Long.compare(m2.getTodayFocusTime(), m1.getTodayFocusTime()));
 
                 adapter.notifyDataSetChanged();
             }
@@ -497,79 +495,5 @@ public class GroupDetailActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         handler.removeCallbacks(timerRunnable);
-    }
-
-    /**
-     * 그룹 멤버 목록을 표시하기 위한 리사이클러뷰 어댑터입니다.
-     */
-    private static class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.ViewHolder> {
-        private List<MemberStatus> list;
-        private OnMemberLongClickListener longClickListener;
-
-        interface OnMemberLongClickListener {
-            void onLongClick(MemberStatus status);
-        }
-
-        MemberAdapter(List<MemberStatus> list, OnMemberLongClickListener listener) { 
-            this.list = list;
-            this.longClickListener = listener;
-        }
-
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_member, parent, false);
-            return new ViewHolder(v);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            MemberStatus status = list.get(position);
-            
-            // 순위 표시 (1부터 시작)
-            holder.tvRank.setText(String.valueOf(position + 1));
-
-            if(position == 0) holder.tvRank.setTextColor(0xFFCC3333);
-
-            holder.tvName.setText(status.getName());
-
-            // 멤버의 현재 상태(집중/휴식) 설정
-            holder.tvFocus.setText(status.isFocus() ? "집중" : "휴식");
-            holder.tvFocus.setTextColor(status.isFocus() ? 0xFFCC3333 : 0xFF4CAF50);
-            
-            // 남은 시간 텍스트 설정
-            int seconds = (int) (status.getTimeLeft() / 1000);
-            int h = seconds / 3600;
-            int m = (seconds % 3600) / 60;
-            int s = seconds % 60;
-            holder.tvTime.setText(String.format(Locale.getDefault(), "%02d:%02d:%02d", h, m, s));
-
-            // 오늘 총 집중 시간 표시
-            long totalSec = status.getTodayFocusTime() / 1000;
-            long th = totalSec / 3600;
-            long tm = (totalSec % 3600) / 60;
-            long ts = totalSec % 60;
-            holder.tvTotalToday.setText(String.format(Locale.getDefault(), "오늘\n %d시간 %d분 %d초", th, tm, ts));
-
-            holder.itemView.setOnLongClickListener(v -> {
-                longClickListener.onLongClick(status);
-                return true;
-            });
-        }
-
-        @Override
-        public int getItemCount() { return list.size(); }
-
-        static class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvName, tvTime, tvTotalToday, tvFocus, tvRank;
-            ViewHolder(View v) {
-                super(v);
-                tvRank = v.findViewById(R.id.tv_rank);
-                tvName = v.findViewById(R.id.tv_name);
-                tvTime = v.findViewById(R.id.tv_time);
-                tvTotalToday = v.findViewById(R.id.tv_total_today);
-                tvFocus = v.findViewById(R.id.tv_focus);
-            }
-        }
     }
 }

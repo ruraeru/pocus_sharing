@@ -24,26 +24,26 @@ public class FirestoreRepository {
         this.db = FirebaseFirestore.getInstance();
     }
 
-    // --- 사용자 관련 작업 (User Operations) ---
+    // --- 사용자 관련 작업 ---
 
     /**
-     * 사용자 정보를 Firestore에 저장하거나 업데이트합니다.
+     * 사용자 정보를 Firestore에 저장하거나 업데이트하는 함수
      */
     public Task<Void> saveUser(User user) {
         return db.collection(USERS_COLLECTION).document(user.getUserId()).set(user);
     }
 
     /**
-     * 특정 사용자의 문서를 가져옵니다.
+     * 특정 사용자의 문서를 가져오는 함수
      */
     public Task<DocumentSnapshot> getUser(String userId) {
         return db.collection(USERS_COLLECTION).document(userId).get();
     }
 
-    // --- 그룹 관련 작업 (Group Operations) ---
+    // --- 그룹 관련 작업 ---
 
     /**
-     * 새로운 그룹을 생성합니다. 그룹 문서 생성과 동시에 관리자를 멤버 서브컬렉션에 추가합니다.
+     * 새로운 그룹을 생성하고, 그룹 문서 생성과 동시에 관리자를 멤버 서브컬렉션에 추가
      */
     public Task<DocumentReference> createGroup(Group group) {
         DocumentReference groupRef = db.collection(GROUPS_COLLECTION).document();
@@ -59,7 +59,7 @@ public class FirestoreRepository {
     }
 
     /**
-     * 기존 그룹에 사용자를 멤버로 추가합니다.
+     * 기존 그룹에 사용자를 멤버로 추가하는 함수
      */
     public Task<Void> joinGroup(String groupId, String userId) {
         GroupMember member = new GroupMember(userId, "MEMBER");
@@ -73,7 +73,7 @@ public class FirestoreRepository {
     }
 
     /**
-     * 사용자가 속한 모든 그룹의 목록을 가져옵니다.
+     * 사용자가 속한 모든 그룹의 목록을 가져오는 함수
      */
     public Task<QuerySnapshot> getUserGroups(String userId) {
         return db.collection(GROUPS_COLLECTION)
@@ -82,7 +82,7 @@ public class FirestoreRepository {
     }
 
     /**
-     * 사용자가 속한 그룹 목록의 실시간 변경 사항을 감시하는 리스너를 등록합니다.
+     * 사용자가 속한 그룹 목록의 실시간 변경 사항을 감시하는 리스너를 등록하는 함수
      */
     public ListenerRegistration getUserGroupsListener(String userId, EventListener<QuerySnapshot> listener) {
         return db.collection(GROUPS_COLLECTION)
@@ -91,7 +91,7 @@ public class FirestoreRepository {
     }
 
     /**
-     * 6자리 초대 코드를 사용하여 그룹을 검색합니다.
+     * 6자리 초대 코드를 사용하여 그룹을 검색하는 함수
      */
     public Task<QuerySnapshot> findGroupByCode(String code) {
         return db.collection(GROUPS_COLLECTION)
@@ -101,7 +101,7 @@ public class FirestoreRepository {
     }
 
     /**
-     * 사용자가 그룹에서 나갈 때 멤버 정보를 삭제하고 ID 배열에서 제거합니다.
+     * 사용자가 그룹에서 나갈 때 멤버 정보를 삭제하고 ID 배열에서 제거하는 함수
      */
     public Task<Void> leaveGroup(String groupId, String userId) {
         WriteBatch batch = db.batch();
@@ -112,14 +112,14 @@ public class FirestoreRepository {
     }
 
     /**
-     * 그룹 정보를 업데이트합니다. (이름, 최대 인원 등)
+     * 그룹 정보를 업데이트하는 함수 (이름, 최대 인원 등)
      */
     public Task<Void> updateGroup(String groupId, Map<String, Object> updates) {
         return db.collection(GROUPS_COLLECTION).document(groupId).update(updates);
     }
 
     /**
-     * 그룹을 완전히 삭제합니다. 멤버 서브컬렉션을 먼저 비우고 그룹 문서를 삭제합니다.
+     * 그룹을 완전히 삭제하고, 멤버 서브컬렉션을 먼저 비우고 그룹 문서를 삭제하는 함수
      */
     public Task<Void> deleteGroup(String groupId) {
         DocumentReference groupRef = db.collection(GROUPS_COLLECTION).document(groupId);
@@ -137,16 +137,16 @@ public class FirestoreRepository {
     }
 
     /**
-     * 특정 그룹의 상세 정보를 가져옵니다.
+     * 특정 그룹의 상세 정보를 가져오는 함수
      */
     public Task<DocumentSnapshot> getGroup(String groupId) {
         return db.collection(GROUPS_COLLECTION).document(groupId).get();
     }
 
-    // --- 타이머 로그 및 통계 작업 (Timer Log & Stats Operations) ---
+    // --- 타이머 로그 및 통계 작업 ---
 
     /**
-     * 타이머 세션 완료 기록을 저장하고, 사용자의 일일 통계 및 그룹 통계를 업데이트합니다.
+     * 타이머 세션 완료 기록을 저장하고, 사용자의 일일 통계 및 그룹 통계를 업데이트하는 함수
      */
     public Task<Void> saveTimerLog(TimerLog log) {
         DocumentReference logRef = db.collection(TIMER_LOGS_COLLECTION).document();
@@ -188,7 +188,7 @@ public class FirestoreRepository {
     }
 
     /**
-     * 특정 사용자의 오늘 총 집중 시간(초)을 가져옵니다.
+     * 특정 사용자의 오늘 총 집중 시간(초)을 가져오는 함수
      */
     public Task<Integer> getDailyFocusTime(String userId) {
         String dateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
@@ -205,7 +205,7 @@ public class FirestoreRepository {
     }
 
     /**
-     * 사용자의 타이머 로그 실시간 감시 리스너를 등록합니다.
+     * 사용자의 타이머 로그 실시간 감시 리스너를 등록하는 함수
      */
     public ListenerRegistration getTimerLogsListener(String userId, EventListener<QuerySnapshot> listener) {
         return db.collection(TIMER_LOGS_COLLECTION)

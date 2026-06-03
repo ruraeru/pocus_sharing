@@ -31,7 +31,7 @@ import java.util.Map;
 import kotlin.Unit;
 
 /**
- * SettingsFragment: 사용자 프로필 수정 및 앱 설정을 관리하는 프래그먼트
+ * 사용자 프로필 수정 및 앱 설정을 관리하는 프래그먼트
  */
 public class SettingsFragment extends Fragment {
 
@@ -39,7 +39,6 @@ public class SettingsFragment extends Fragment {
     private ImageView ivProfile;
     private TextView tvNicknameDisplay;
     private EditText etNickname;
-    private Button btnSaveNickname, btnLogout;
     private SwitchCompat switchAlarm, switchScreenOn, switchAppExit;
     private SharedPreferences prefs;
     private FirestoreRepository repository;
@@ -53,13 +52,12 @@ public class SettingsFragment extends Fragment {
         mAuth = FirebaseAuth.getInstance();
         repository = new FirestoreRepository();
         // 로컬 설정을 저장하기 위한 SharedPreferences 초기화
-        prefs = requireActivity().getSharedPreferences("PocusPrefs", Context.MODE_PRIVATE);
-
+        prefs = requireActivity().getSharedPreferences("PocusPefs", Context.MODE_PRIVATE);
         ivProfile = view.findViewById(R.id.iv_profile);
         tvNicknameDisplay = view.findViewById(R.id.tv_nickname_display);
         etNickname = view.findViewById(R.id.et_nickname);
-        btnSaveNickname = view.findViewById(R.id.btn_save_nickname);
-        btnLogout = view.findViewById(R.id.btn_logout);
+        Button btnSaveNickname = view.findViewById(R.id.btn_save_nickname);
+        Button btnLogout = view.findViewById(R.id.btn_logout);
         switchAlarm = view.findViewById(R.id.switch_alarm);
         switchScreenOn = view.findViewById(R.id.switch_screen_on);
         switchAppExit = view.findViewById(R.id.switch_app_exit_prevention);
@@ -95,7 +93,7 @@ public class SettingsFragment extends Fragment {
     }
 
     /**
-     * Firestore로부터 사용자의 프로필 정보와 저장된 설정을 불러옵니다.
+     * Firestore로부터 사용자의 프로필 정보와 저장된 설정을 불러오는 함수
      */
     private void loadUserProfile() {
         if (mAuth.getCurrentUser() != null) {
@@ -141,7 +139,7 @@ public class SettingsFragment extends Fragment {
     }
 
     /**
-     * 기기 로컬에 저장된 설정을 불러옵니다.
+     * 기기 로컬에 저장된 설정을 불러오는 함수
      */
     private void loadLocalSettings() {
         switchAlarm.setChecked(prefs.getBoolean("alarm_off", false));
@@ -151,7 +149,7 @@ public class SettingsFragment extends Fragment {
     }
 
     /**
-     * 입력된 닉네임을 Firestore에 저장합니다.
+     * 입력된 닉네임을 Firestore에 저장하는 함수
      */
     private void saveNickname() {
         String nickname = etNickname.getText().toString().trim();
@@ -178,7 +176,7 @@ public class SettingsFragment extends Fragment {
     }
 
     /**
-     * Firestore에 사용자 개별 설정 변경 사항을 업데이트합니다.
+     * Firestore에 사용자 개별 설정 변경 사항을 업데이트하는 함수
      */
     private void updateFirestoreSettings(String field, boolean value) {
         String uid = mAuth.getUid();
@@ -194,7 +192,7 @@ public class SettingsFragment extends Fragment {
     }
 
     /**
-     * 카카오 및 Firebase 로그아웃을 수행하고 로그인 화면으로 이동합니다.
+     * 카카오 및 Firebase 로그아웃을 수행하고 로그인 화면으로 이동하는 함수
      */
     private void logout() {
         // 카카오 로그아웃
@@ -217,7 +215,7 @@ public class SettingsFragment extends Fragment {
     }
 
     /**
-     * 설정에 따라 화면이 항상 켜져 있을지 여부를 결정합니다.
+     * 설정에 따라 화면이 항상 켜져 있을지 여부를 결정하는 함수
      */
     private void updateScreenOn(boolean keepOn) {
         if (getActivity() != null) {

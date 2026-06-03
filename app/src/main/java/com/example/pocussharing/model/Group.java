@@ -17,23 +17,16 @@ public class Group {
     // Firebase 연동을 위한 기본 생성자
     public Group() {}
 
-    /**
-     * 새로운 그룹 객체를 초기값과 함께 생성합니다.
-     * @param groupName 그룹 이름
-     * @param groupCode 그룹 참여 코드
-     * @param adminId 관리자 ID
-     */
     public Group(String groupName, String groupCode, String adminId) {
         this.groupName = groupName;
         this.groupCode = groupCode;
         this.adminId = adminId;
         this.memberIds = new java.util.ArrayList<>();
-        this.memberIds.add(adminId); // 생성자를 첫 번째 멤버로 추가
+        this.memberIds.add(adminId); // 그룹 생성자를 첫 번째 멤버로 추가
         this.maxMembers = 12;        // 기본 최대 인원 설정
         this.createdAt = Timestamp.now();
     }
 
-    // Getter 및 Setter 메서드들
     public String getGroupId() { return groupId; }
     public void setGroupId(String groupId) { this.groupId = groupId; }
     public String getGroupName() { return groupName; }

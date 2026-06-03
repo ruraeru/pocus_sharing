@@ -3,7 +3,7 @@ package com.example.pocussharing.model;
 import com.google.firebase.Timestamp;
 
 /**
- * User: 앱 사용자의 프로필 및 설정 정보를 담는 모델 클래스
+ * 앱 사용자의 프로필 및 설정 정보를 담는 모델 클래스
  */
 public class User {
     private String userId;           // Firebase UID
@@ -17,7 +17,7 @@ public class User {
     public User() {}
 
     /**
-     * 새로운 사용자 객체를 기본값과 함께 생성합니다.
+     * 새로운 사용자 객체를 기본값과 함께 생성
      * @param userId Firebase UID
      * @param kakaoId 카카오 ID
      * @param nickname 닉네임
@@ -30,7 +30,6 @@ public class User {
         this.settings = new UserSettings();
     }
 
-    // Getter 및 Setter 메서드들
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
     public String getKakaoId() { return kakaoId; }
@@ -43,27 +42,4 @@ public class User {
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
     public UserSettings getSettings() { return settings; }
     public void setSettings(UserSettings settings) { this.settings = settings; }
-
-    /**
-     * UserSettings: 알람, 화면 유지 등 사용자의 앱 설정 정보를 담는 내부 클래스
-     */
-    public static class UserSettings {
-        private boolean muteAlarms = false;    // 알람 무음 여부
-        private boolean keepScreenOn = true;   // 화면 켜짐 유지 여부
-        private boolean preventExit = false;    // 앱 종료 방지 모드 활성화 여부
-        private Timestamp updatedAt;           // 마지막 설정 변경 일시
-
-        public UserSettings() {
-            this.updatedAt = Timestamp.now();
-        }
-
-        public boolean isMuteAlarms() { return muteAlarms; }
-        public void setMuteAlarms(boolean muteAlarms) { this.muteAlarms = muteAlarms; }
-        public boolean isKeepScreenOn() { return keepScreenOn; }
-        public void setKeepScreenOn(boolean keepScreenOn) { this.keepScreenOn = keepScreenOn; }
-        public boolean isPreventExit() { return preventExit; }
-        public void setPreventExit(boolean preventExit) { this.preventExit = preventExit; }
-        public Timestamp getUpdatedAt() { return updatedAt; }
-        public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
-    }
 }

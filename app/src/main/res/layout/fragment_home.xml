@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- HomeFragment 레이아웃: 개인 타이머 기능과 오늘 집중 기록을 표시 -->
+<!-- 개인 타이머 기능과 오늘 집중 기록을 표시 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"

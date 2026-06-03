@@ -24,7 +24,6 @@ public class GroupMember {
         this.joinedAt = Timestamp.now();
     }
 
-    // Getter 및 Setter 메서드들
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
     public String getRole() { return role; }

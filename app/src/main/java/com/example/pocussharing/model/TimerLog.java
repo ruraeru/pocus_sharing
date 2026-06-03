@@ -3,7 +3,7 @@ package com.example.pocussharing.model;
 import com.google.firebase.Timestamp;
 
 /**
- * TimerLog: 개별 집중 또는 휴식 세션의 기록을 담는 모델 클래스
+ * 개별 집중 또는 휴식 세션의 기록을 담는 모델 클래스
  */
 public class TimerLog {
     private String logId;           // 로그 고유 ID (Firestore 문서 ID)
@@ -19,7 +19,7 @@ public class TimerLog {
     public TimerLog() {}
 
     /**
-     * 새로운 타이머 로그 객체를 생성합니다.
+     * 새로운 타이머 로그 객체를 생성
      * @param user_id 사용자 ID
      * @param logType 세션 유형
      * @param durationSeconds 지속 시간
@@ -35,7 +35,6 @@ public class TimerLog {
         this.createdAt = Timestamp.now();
     }
 
-    // Getter 및 Setter 메서드들
     public String getLogId() { return logId; }
     public void setLogId(String logId) { this.logId = logId; }
     public String getUser_id() { return user_id; }
