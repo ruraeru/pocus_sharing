@@ -1,7 +1,6 @@
 /**
- * GroupFragment.java
- * 사용자가 속한 그룹 목록을 표시하고, 새로운 그룹을 생성하거나 초대 코드를 통해 기존 그룹에 참여할 수 있는 화면입니다.
- * Firestore의 실시간 업데이트를 감시하여 그룹 목록을 최신 상태로 유지합니다.
+ * 참여 중인 그룹 목록을 표시하고, 새 그룹 생성 및 초대 코드로 가입 기능 제공
+ * Firestore 실시간 리스너를 통해 그룹 목록 최신 상태 유지
  */
 package com.example.pocussharing;
 
@@ -34,17 +33,17 @@ import java.util.Random;
 
 public class GroupFragment extends Fragment {
 
-    private RecyclerView rvGroups;          // 그룹 목록 리사이클러뷰
-    private FloatingActionButton fabAdd, fabJoin; // 그룹 생성 및 참여 버튼
-    private GroupAdapter adapter;           // 그룹 목록 어댑터
-    private List<Group> groupList = new ArrayList<>(); // 그룹 데이터 리스트
-    private FirestoreRepository repository;  // Firestore 데이터 저장소
-    private ListenerRegistration groupsListener; // 실시간 업데이트 리스너
+    // [UI 및 데이터 블록]
+    private RecyclerView rvGroups;          // 그룹 카드들이 표시될 리사이클러뷰
+    private FloatingActionButton fabAdd, fabJoin; // 생성 및 가입 단추
+    private GroupAdapter adapter;           // 리사이클러뷰용 어댑터
+    private final List<Group> groupList = new ArrayList<>(); // 그룹 데이터 담는 리스트
+    private FirestoreRepository repository;  // DB 접근소
+    private ListenerRegistration groupsListener; // 실시간 변경 감시용 등록 객체
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // 레이아웃 인플레이트
         View view = inflater.inflate(R.layout.fragment_group, container, false);
 
         repository = new FirestoreRepository();
@@ -52,10 +51,10 @@ public class GroupFragment extends Fragment {
         fabAdd = view.findViewById(R.id.fab_add);
         fabJoin = view.findViewById(R.id.fab_join);
 
-        setupRecyclerView();
-        setupGroupsListener(); // 실시간 감시 설정
+        setupRecyclerView(); // 리스트 세팅
+        setupGroupsListener(); // 실시간 데이터 감시 시작
 
-        // 버튼 클릭 이벤트 설정
+        // 단추 클릭 이벤트 등록함
         fabAdd.setOnClickListener(v -> showCreateGroupDialog());
         fabJoin.setOnClickListener(v -> showJoinGroupDialog());
 
@@ -63,7 +62,7 @@ public class GroupFragment extends Fragment {
     }
 
     /**
-     * 리사이클러뷰와 어댑터를 연결하고 레이아웃 매니저를 설정합니다.
+     * 리사이클러뷰와 어댑터 연결하고 레이아웃 형식(Linear) 정함
      */
     private void setupRecyclerView() {
         adapter = new GroupAdapter(groupList);
@@ -72,37 +71,37 @@ public class GroupFragment extends Fragment {
     }
 
     /**
-     * 사용자가 속한 그룹 목록의 변경 사항을 Firestore에서 실시간으로 감시합니다.
+     * 내가 속한 그룹 목록의 변화를 Firestore에서 실시간으로 감시
+     * [중요] 새로운 멤버가 들어오거나 그룹 정보가 바뀌면 즉시 화면 갱신
      */
     private void setupGroupsListener() {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
 
-        // 기존 리스너가 있으면 먼저 제거
-        groupsListenerRemove(); 
+        groupsListenerRemove(); // 기존 중복 리스너 있으면 지움
 
         groupsListener = repository.getUserGroupsListener(uid, (value, error) -> {
             if (error != null) {
-                Log.e("GroupFragment", "Listen failed.", error);
+                Log.e("GroupFragment", "데이터 구독 실패함", error);
                 return;
             }
 
-            groupList.clear();
+            groupList.clear(); // 목록 비우고 새로 채움
             if (value != null) {
                 for (com.google.firebase.firestore.DocumentSnapshot doc : value.getDocuments()) {
                     Group group = doc.toObject(Group.class);
                     if (group != null) {
-                        group.setGroupId(doc.getId());
+                        group.setGroupId(doc.getId()); // 문서 ID 주입
                         groupList.add(group);
                     }
                 }
             }
-            adapter.notifyDataSetChanged();
+            adapter.notifyDataSetChanged(); // UI 다시 그림
         });
     }
 
     /**
-     * 리스너 등록을 해제합니다.
+     * 리스너 등록 해제하여 자원 낭비 막음
      */
     private void groupsListenerRemove() {
         if (groupsListener != null) {
@@ -112,7 +111,7 @@ public class GroupFragment extends Fragment {
     }
 
     /**
-     * 그룹 생성을 위한 이름을 입력받는 다이얼로그를 표시합니다.
+     * 그룹 생성 팝업창 띄움
      */
     private void showCreateGroupDialog() {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_create_group, null);
@@ -122,18 +121,15 @@ public class GroupFragment extends Fragment {
                 .setView(dialogView)
                 .setPositiveButton("생성", (dialog, which) -> {
                     String name = etName.getText().toString().trim();
-                    if (!name.isEmpty()) {
-                        createGroup(name);
-                    } else {
-                        Toast.makeText(getContext(), "이름을 입력해주세요.", Toast.LENGTH_SHORT).show();
-                    }
+                    if (!name.isEmpty()) createGroup(name); // 이름 있으면 생성 진행
+                    else Toast.makeText(getContext(), "이름을 입력함", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("취소", null)
                 .show();
     }
 
     /**
-     * 6자리 초대 코드를 입력받아 그룹에 참여하는 다이얼로그를 표시합니다.
+     * 초대 코드 입력 팝업창 띄움
      */
     private void showJoinGroupDialog() {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_join_group, null);
@@ -143,16 +139,15 @@ public class GroupFragment extends Fragment {
                 .setView(dialogView)
                 .setPositiveButton("참여", (dialog, which) -> {
                     String code = etCode.getText().toString().trim().toUpperCase();
-                    if (!code.isEmpty()) {
-                        joinGroupByCode(code);
-                    }
+                    if (!code.isEmpty()) joinGroupByCode(code); // 코드 있으면 가입 진행
                 })
                 .setNegativeButton("취소", null)
                 .show();
     }
 
     /**
-     * 입력된 코드로 그룹을 찾아 현재 사용자를 멤버로 추가합니다.
+     * 입력받은 코드로 DB 검색해서 그룹에 가입
+     * [중요 로직] 이미 가입했는지, 인원이 꽉 찼는지 검증
      */
     private void joinGroupByCode(String code) {
         String uid = FirebaseAuth.getInstance().getUid();
@@ -163,50 +158,46 @@ public class GroupFragment extends Fragment {
                 com.google.firebase.firestore.DocumentSnapshot doc = queryDocumentSnapshots.getDocuments().get(0);
                 Group group = doc.toObject(Group.class);
                 if (group != null) {
-                    // 이미 멤버인지, 정원 초과인지 확인
+                    // 예외 처리
                     if (group.getMemberIds() != null && group.getMemberIds().contains(uid)) {
-                        Toast.makeText(getContext(), "이미 참여 중인 그룹입니다.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "이미 가입된 그룹임", Toast.LENGTH_SHORT).show();
                     } else if (group.getMemberIds() != null && group.getMemberIds().size() >= group.getMaxMembers()) {
-                        Toast.makeText(getContext(), "그룹 인원이 가득 찼습니다.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "인원이 가득 참", Toast.LENGTH_SHORT).show();
                     } else {
+                        // 최종 가입 처리
                         repository.joinGroup(doc.getId(), uid)
-                                .addOnSuccessListener(aVoid -> Toast.makeText(getContext(), group.getGroupName() + " 그룹에 참여했습니다!", Toast.LENGTH_SHORT).show())
-                                .addOnFailureListener(e -> Toast.makeText(getContext(), "참여 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                                .addOnSuccessListener(aVoid -> Toast.makeText(getContext(), group.getGroupName() + " 가입함", Toast.LENGTH_SHORT).show())
+                                .addOnFailureListener(e -> Toast.makeText(getContext(), "가입 실패함", Toast.LENGTH_SHORT).show());
                     }
                 }
             } else {
-                Toast.makeText(getContext(), "유효하지 않은 코드입니다.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "잘못된 코드임", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     /**
-     * 임의의 6자리 코드를 생성하여 새로운 그룹을 Firestore에 등록합니다.
+     * 랜덤 6자리 코드를 생성해서 새로운 그룹 문서를 Firestore에 만듦
      */
     private void createGroup(String name) {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
 
-        String randomCode = generateRandomCode(6);
+        String randomCode = generateRandomCode();
         Group newGroup = new Group(name, randomCode, uid);
         repository.createGroup(newGroup)
-                .addOnSuccessListener(docRef -> {
-                    Toast.makeText(getContext(), "그룹이 생성되었습니다! 코드: " + randomCode, Toast.LENGTH_LONG).show();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("GroupFragment", "Group creation failed", e);
-                    Toast.makeText(getContext(), "그룹 생성 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+                .addOnSuccessListener(docRef -> Toast.makeText(getContext(), "그룹 생성됨! 코드: " + randomCode, Toast.LENGTH_LONG).show())
+                .addOnFailureListener(e -> Toast.makeText(getContext(), "생성 실패함", Toast.LENGTH_SHORT).show());
     }
 
     /**
-     * 알파벳 대문자와 숫자를 조합하여 임의의 문자열을 생성합니다.
+     * 영문 대문자와 숫자를 섞어서 랜덤 문자열 생성
      */
-    private String generateRandomCode(int length) {
+    private String generateRandomCode() {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         StringBuilder sb = new StringBuilder();
         Random random = new Random();
-        for (int i = 0; i < length; i++) {
+        for (int i = 0; i < 6; i++) {
             sb.append(chars.charAt(random.nextInt(chars.length())));
         }
         return sb.toString();
@@ -215,18 +206,16 @@ public class GroupFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        groupsListenerRemove(); // 화면 종료 시 리스너 해제
+        groupsListenerRemove(); // 화면 파괴 시 감시 중단
     }
 
     /**
-     * 그룹 목록을 표시하기 위한 리사이클러뷰 어댑터 클래스입니다.
+     * GroupAdapter: 리사이클러뷰에 그룹 정보를 바인딩
      */
     private class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHolder> {
-        private List<Group> groups;
+        private final List<Group> groups;
 
-        public GroupAdapter(List<Group> groups) {
-            this.groups = groups;
-        }
+        public GroupAdapter(List<Group> groups) { this.groups = groups; }
 
         @NonNull
         @Override
@@ -243,7 +232,7 @@ public class GroupFragment extends Fragment {
             int count = group.getMemberIds() != null ? group.getMemberIds().size() : 0;
             holder.tvMemberCount.setText(count + "/" + group.getMaxMembers());
             
-            // 아이템 클릭 시 그룹 상세 화면으로 이동
+            // 클릭 시 그룹 상세 화면으로 이동
             holder.itemView.setOnClickListener(v -> {
                 Intent intent = new Intent(getActivity(), GroupDetailActivity.class);
                 intent.putExtra("groupId", group.getGroupId());
@@ -253,13 +242,10 @@ public class GroupFragment extends Fragment {
         }
 
         @Override
-        public int getItemCount() {
-            return groups.size();
-        }
+        public int getItemCount() { return groups.size(); }
 
         class GroupViewHolder extends RecyclerView.ViewHolder {
             TextView tvName, tvCode, tvMemberCount;
-
             public GroupViewHolder(@NonNull View itemView) {
                 super(itemView);
                 tvName = itemView.findViewById(R.id.tv_group_name);

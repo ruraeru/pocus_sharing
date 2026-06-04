@@ -17,7 +17,6 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -42,79 +41,78 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * 특정 그룹의 상세 정보를 보여주고, 그룹 멤버들의 실시간 타이머 상태를 확인하며
- * 개인 타이머 기능을 수행하는 액티비티
- * 그룹 관리자 기능(정보 수정, 멤버 추방, 그룹 삭제)과 실시간 상태 동기화 기능을 포함
+ * 특정 그룹의 상세 정보 및 멤버들의 실시간 상태 확인하는 액티비티
+ * 개인 타이머 기능과 그룹 관리(정보 수정, 멤버 추방, 그룹 삭제) 기능 포함함
  */
-
 public class GroupDetailActivity extends AppCompatActivity {
 
-    private String groupId;               // 현재 그룹 ID
-    private String currentUserId;         // 현재 사용자 ID
-    private RtdbRepository rtdbRepository; // 실시간 데이터베이스 저장소
+    private String groupId;               // 현재 활성화된 그룹 ID
+    private String currentUserId;         // 현재 로그인한 내 UID
+    private RtdbRepository rtdbRepository; // 실시간 DB 저장소
     private FirestoreRepository firestoreRepository; // Firestore 저장소
-    private MemberAdapter adapter;        // 그룹 멤버 목록 어댑터
-    private final List<MemberStatus> memberList = new ArrayList<>(); // 멤버 상태 리스트
-    private Group group;                  // 그룹 정보 객체
-    private ImageButton btnManage;        // 그룹 관리 버튼 (그룹장 전용)
+    private MemberAdapter adapter;        // 그룹 멤버 리스트 어댑터
+    private final List<MemberStatus> memberList = new ArrayList<>(); // 실시간 멤버 데이터 리스트
+    private Group group;                  // 현재 그룹의 메타데이터(이름, 초대코드 등) 정보
+    private ImageButton btnManage;        // 그룹장 전용 관리 단추
 
-    // 개인 타이머 관련 뷰 및 필드
-    private TimerView personalTimerView;
-    private TextView tvPersonalDigitalTimer;
-    private TextView tvGroupCodeValue;
-    private LinearLayout llInviteCodeContainer;
-    private RadioButton rbPersonalFocus, rbPersonalRest;
-    private final Handler handler = new Handler(Looper.getMainLooper());
+    private TimerView personalTimerView;  // 중앙 원형 타이머
+    private TextView tvPersonalDigitalTimer; // 디지털 시간 텍스트
+    private TextView tvGroupCodeValue;    // 초대 코드 표시 텍스트
+    private LinearLayout llInviteCodeContainer; // 초대 코드 클릭 영역
+    private RadioButton rbPersonalFocus, rbPersonalRest; // 상태 선택 단추
+    private final Handler handler = new Handler(Looper.getMainLooper()); // 타이머 카운트다운 핸들러
     
-    private long sessionStartTimeMillis; // 세션 시작 시간
+    private long sessionStartTimeMillis; // 현재 타이머 세션 시작 시간
     private long timeLeft = 25 * 60 * 1000; // 남은 시간 (기본 25분)
-    private long totalSessionTime = 25 * 60 * 1000; // 설정된 전체 세션 시간
-
-    private boolean isRunning = false;     // 타이머 실행 여부
-    private final boolean isFocusMode = true;    // 집중 모드 여부
+    private long totalSessionTime = 25 * 60 * 1000; // 현재 세션 총 설정 시간
+    private boolean isRunning = false;     // 타이머 작동 여부
+    private boolean isFocusMode = true;    // 현재 모드 (집중/휴식)
     private long totalCumulativeMillis = 0; // 오늘 누적 집중 시간
-    private String userNickname = "";  // 사용자 닉네임
+    private String userNickname = "";      // 사용자 닉네임
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // 레이아웃 파일 연결함
         setContentView(R.layout.activity_group_detail);
 
         currentUserId = FirebaseAuth.getInstance().getUid();
         groupId = getIntent().getStringExtra("groupId");
         String groupName = getIntent().getStringExtra("groupName");
         
-        // 기본값 설정 (에러 방지)
+        // 그룹 ID가 없으면 기본값 세팅함
         if (groupId == null) groupId = "main_group"; 
 
-        initViews(groupName);
+        initViews(groupName); // UI 컴포넌트 초기화함
         
         rtdbRepository = new RtdbRepository();
         firestoreRepository = new FirestoreRepository();
         
         // 데이터 로딩 시작
-        loadGroupInfo();
-        loadUserProfile();
-        loadTodayStats();
-        listenToPresence(); // 실시간 상태 감시 시작
+        loadGroupInfo();    // 그룹 이름, 방장 여부 등 로드
+        loadUserProfile();  // 닉네임 로드
+        loadTodayStats();   // 오늘 집중 시간 로드
+        listenToPresence(); // 다른 멤버들 상태 감시 시작
     }
 
     /**
-     * 레이아웃 뷰 초기화 및 이벤트 리스너를 설정하는 함수
+     * 레이아웃의 각종 뷰들을 찾아서 연결하고 리스너 등록
      */
     private void initViews(String groupName) {
+        // 툴바 설정 (상단 앱바)
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle(groupName != null ? groupName : "그룹 상세");
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true); // 뒤로가기 버튼 활성화
         }
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
+        // 그룹 관리 단추 (초기에는 숨김, 내가 방장일 때만 보여줌)
         btnManage = findViewById(R.id.btn_manage);
         btnManage.setOnClickListener(v -> showManageGroupDialog());
 
-        // 개인 타이머 관련 뷰 할당
+        // 개인 타이머 컴포넌트 연결
         personalTimerView = findViewById(R.id.personal_timer_view);
         tvPersonalDigitalTimer = findViewById(R.id.tv_personal_digital_timer);
         tvGroupCodeValue = findViewById(R.id.tv_group_code_value);
@@ -127,8 +125,8 @@ public class GroupDetailActivity extends AppCompatActivity {
         personalTimerView.setOnTimerDialListener(new TimerView.OnTimerDialListener() {
             @Override
             public void onDialChanged(float progress) {
-                if (isRunning) stopTimer();
-                long newTime = (long) (progress * 60 * 60 * 1000); // 최대 60분 기준
+                if (isRunning) stopTimer(); // 조작 중엔 멈춤
+                long newTime = (long) (progress * 60 * 60 * 1000); // 60분 대비 진행률 계산
                 timeLeft = newTime;
                 totalSessionTime = newTime;
                 updatePersonalUI(timeLeft);
@@ -136,7 +134,7 @@ public class GroupDetailActivity extends AppCompatActivity {
 
             @Override
             public void onDialSelected(float progress) {
-                toggleTimer(); // 다이얼에서 손을 떼면 타이머 시작/정지
+                toggleTimer(); // 조작 끝나면 시작
             }
         });
 
@@ -149,17 +147,17 @@ public class GroupDetailActivity extends AppCompatActivity {
             }
         });
 
-        // 그룹 멤버 리사이클러뷰 설정
+        // 그룹 멤버 리사이클러뷰 설정 멤버 목록을 세로 리스트로 보여줌
         RecyclerView rvMembers = findViewById(R.id.rv_members);
-        rvMembers.setLayoutManager(new LinearLayoutManager(this)); // 세로 리스트 형태
-        adapter = new MemberAdapter(memberList, this::onMemberLongClick);
+        rvMembers.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new MemberAdapter(memberList, this::onMemberLongClick); // 롱클릭(추방) 리스너 연결
         rvMembers.setAdapter(adapter);
 
         updatePersonalUI(totalSessionTime);
     }
 
     /**
-     * 사용자의 프로필(닉네임)을 Firestore에서 불러오는 함수
+     * 사용자의 닉네임을 Firestore에서 가져와 동기화 준비
      */
     private void loadUserProfile() {
         if (currentUserId != null) {
@@ -184,97 +182,81 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 타이머 모드를 변경하는 함수. (집중 <-> 휴식)
+     * 집중 모드 또는 휴식 모드로 전환
+     * 모드 전환 시 이전 기록은 DB에 저장
      */
     private void setMode(boolean isFocus) {
         if (isRunning) {
             long elapsed = totalSessionTime - timeLeft;
-            if (isFocus) {
-                totalCumulativeMillis += elapsed;
-            }
+            if (isFocusMode && isFocus) totalCumulativeMillis += elapsed; // 집중 중이었으면 누적
             stopTimer();
-            saveLogToFirebase();
+            saveLogToFirebase(); // 이전 세션 기록
         }
+        isFocusMode = isFocus;
         personalTimerView.setMode(isFocus);
-
-        long FOCUS_TIME = 25 * 60 * 1000; // 집중 기본 시간 (25분)
-        long REST_TIME = 5 * 60 * 1000; // 휴식 기본 시간 (5분)
+        
+        long FOCUS_TIME = 25 * 60 * 1000;
+        long REST_TIME = 5 * 60 * 1000;
 
         totalSessionTime = isFocus ? FOCUS_TIME : REST_TIME;
         timeLeft = totalSessionTime;
-        updatePersonalUI(timeLeft);
+        updatePersonalUI(timeLeft); // UI 색상 및 시간 초기화
 
-        if (isFocus) {
-            rbPersonalFocus.setChecked(true);
-        } else {
-            rbPersonalRest.setChecked(true);
-        }
+        if (isFocus) rbPersonalFocus.setChecked(true); else rbPersonalRest.setChecked(true);
 
-        // 모드 변경 후 즉시 상태 동기화 (UI 갱신 유도)
-        syncStatusToRtdb();
+        syncStatusToRtdb(); // 바뀐 모드 즉시 실시간 DB에 전송
     }
 
     /**
-     * 개인 타이머의 UI를 업데이트하고 실시간 상태를 서버에 동기화하는 함수
+     * 개인 타이머의 UI(원형 진행률, 디지털 시간) 업데이트
      */
     private void updatePersonalUI(long millis) {
         float progress = (float) millis / (60 * 60 * 1000); 
         personalTimerView.setProgress(progress);
         
-        // 타이머가 작동 중일 때만 주기적으로 동기화
-        if (isRunning) {
-            syncStatusToRtdb();
-        }
+        if (isRunning) syncStatusToRtdb(); // 타이머 도는 동안에는 계속 동기화
         updateDigitalTimer(millis);
     }
 
     /**
-     * 디지털 타이머 형식(HH:mm:ss)으로 텍스트를 업데이트하는 함수
+     * 시간을 00:00:00 형식으로 변환하여 텍스트뷰에 뿌림
      */
     private void updateDigitalTimer(long millis) {
         int seconds = (int) (millis / 1000);
-        int minutes = seconds / 60;
-        int hours = minutes / 60;
-        seconds = seconds % 60;
-        minutes = minutes % 60;
-        tvPersonalDigitalTimer.setText(String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds));
+        int h = seconds / 3600;
+        int m = (seconds % 3600) / 60;
+        int s = seconds % 60;
+        tvPersonalDigitalTimer.setText(String.format(Locale.getDefault(), "%02d:%02d:%02d", h, m, s));
     }
 
     /**
-     * 타이머 시작 또는 일시정지를 토글하는 함수
+     * 타이머가 돌아가고 있으면 멈추고, 멈춰있으면 시작
      */
     private void toggleTimer() {
         if (isRunning) {
             long elapsed = totalSessionTime - timeLeft;
-            if (isFocusMode) {
-                totalCumulativeMillis += elapsed;
-            }
+            if (isFocusMode) totalCumulativeMillis += elapsed;
             stopTimer();
-            saveLogToFirebase();
+            saveLogToFirebase(); // 멈추면 결과 저장
 
-            // 타이머 정지 시 자동으로 휴식 모드로 전환
-            if (isFocusMode) {
-                setMode(false);
-            }
+            if (isFocusMode) setMode(false); // 집중 끝났으면 자동으로 휴식 모드 전환
         } else {
-            if (timeLeft > 0) {
-                startTimer();
-            }
+            if (timeLeft > 0) startTimer();
         }
     }
 
     /**
-     * 타이머를 중지하고 핸들러 콜백을 제거하는 함수
+     * 타이머 작동 정지하고 반복 작업(Runnable) 제거
      */
     private void stopTimer() {
         isRunning = false;
         handler.removeCallbacks(timerRunnable);
         updatePersonalUI(timeLeft);
-        syncStatusToRtdb(); // 최종 상태 동기화
+        syncStatusToRtdb(); // 정지 상태 동기화
     }
 
     /**
-     * 타이머를 시작하는 함수
+     * 타이머 작동 시작하고 현재 시각 기록
      */
     private void startTimer() {
         if (!isRunning) {
@@ -285,7 +267,7 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 완료된 타이머 세션 기록을 Firestore에 저장하는 함수
+     * 세션 종료 후 Firestore에 집중/휴식 로그 저장
      */
     private void saveLogToFirebase() {
         long currentSessionElapsed = totalSessionTime - timeLeft;
@@ -295,20 +277,18 @@ public class GroupDetailActivity extends AppCompatActivity {
         int durationSec = (int) (currentSessionElapsed / 1000);
         
         TimerLog log = new TimerLog(
-            currentUserId,
-            logType,
-            durationSec,
+            currentUserId, logType, durationSec,
             new Timestamp(new Date(sessionStartTimeMillis)),
             Timestamp.now()
         );
 
         firestoreRepository.saveTimerLog(log)
-            .addOnSuccessListener(aVoid -> Log.d("GroupDetail", "타이머 로그 저장 성공"))
-            .addOnFailureListener(e -> Log.e("GroupDetail", "타이머 로그 저장 실패", e));
+            .addOnSuccessListener(aVoid -> Log.d("GroupDetail", "로그 저장함"))
+            .addOnFailureListener(e -> Log.e("GroupDetail", "로그 저장 실패함", e));
     }
 
     /**
-     * 타이머를 1초마다 감소시키는 Runnable 객체
+     * [핵심 루프] 1초마다 남은 시간 줄이고 UI 갱신
      */
     private final Runnable timerRunnable = new Runnable() {
         @Override
@@ -316,33 +296,27 @@ public class GroupDetailActivity extends AppCompatActivity {
             timeLeft -= 1000;
             if (timeLeft <= 0) {
                 timeLeft = 0;
-                if (isFocusMode) {
-                    totalCumulativeMillis += totalSessionTime;
-                }
+                if (isFocusMode) totalCumulativeMillis += totalSessionTime;
                 updatePersonalUI(timeLeft);
                 stopTimer();
                 saveLogToFirebase();
-
-                // 타이머 종료 시 자동으로 휴식 모드로 전환
-                if (isFocusMode) {
-                    setMode(false);
-                }
+                if (isFocusMode) setMode(false);
                 return;
             }
-
             updatePersonalUI(timeLeft);
             handler.postDelayed(this, 1000);
         }
     };
 
     /**
-     * 현재 사용자의 상태를 Firebase RTDB에 저장하는 함수
+     * 현재 내 실시간 정보(모드, 남은 시간, 오늘 총 시간)를 Firebase RTDB에 저장
+     * 이를 통해 다른 그룹 멤버들이 내 상태를 볼 수 있게 됨
      */
     private void syncStatusToRtdb() {
         if (currentUserId == null) return;
-
+        
         long totalTodayFocus = totalCumulativeMillis;
-        // 실행 중인 경우 현재까지의 미기록 집중 시간을 합산하여 표시
+        // 타이머가 돌고 있으면 서버에 아직 기록 안 된 현재 진행분까지 합산하여 실시간성 높임
         if (isRunning && isFocusMode) {
             totalTodayFocus += (totalSessionTime - timeLeft);
         }
@@ -351,7 +325,7 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 그룹 정보를 Firestore에서 불러오는 함수
+     * 그룹 메타데이터 로드하고 내가 방장인지 확인
      */
     private void loadGroupInfo() {
         if (groupId.equals("main_group")) return;
@@ -360,20 +334,20 @@ public class GroupDetailActivity extends AppCompatActivity {
             group = documentSnapshot.toObject(Group.class);
             if (group != null) {
                 group.setGroupId(documentSnapshot.getId());
-                // 그룹장인 경우 관리 버튼 표시
+                // 방장 UID와 내 UID가 같으면 관리 버튼 노출
                 if (group.getAdminId().equals(currentUserId)) {
                     btnManage.setVisibility(View.VISIBLE);
                 }
 
-                // 그룹 초대 코드 설정 및 복사 기능
+                // 초대 코드 텍스트 세팅 및 복사 기능 활성화
                 String groupCode = group.getGroupCode();
-                tvGroupCodeValue.setText(groupCode != null ? groupCode : "없음");
+                tvGroupCodeValue.setText(groupCode != null ? groupCode : "-");
                 llInviteCodeContainer.setOnClickListener(v -> {
                     if (groupCode != null) {
-                        ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(android.content.Context.CLIPBOARD_SERVICE);
-                        ClipData clip = android.content.ClipData.newPlainText("Group Code", groupCode);
+                        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                        ClipData clip = ClipData.newPlainText("Group Code", groupCode);
                         clipboard.setPrimaryClip(clip);
-                        Toast.makeText(this, "초대 코드가 복사되었습니다.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "초대 코드를 복사함", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
@@ -381,7 +355,7 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 그룹 관리(수정/삭제) 다이얼로그를 표시
+     * 그룹 관리(이름 수정, 삭제) 팝업창 띄움
      */
     private void showManageGroupDialog() {
         if (group == null) return;
@@ -394,7 +368,7 @@ public class GroupDetailActivity extends AppCompatActivity {
         etName.setText(group.getGroupName());
         etMax.setText(String.valueOf(group.getMaxMembers()));
 
-        AlertDialog dialog = new android.app.AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .setPositiveButton("저장", (d, which) -> {
                     String newName = etName.getText().toString().trim();
@@ -402,31 +376,29 @@ public class GroupDetailActivity extends AppCompatActivity {
                     if (newName.isEmpty() || maxStr.isEmpty()) return;
 
                     int newMax = Integer.parseInt(maxStr);
-                    
                     Map<String, Object> updates = new HashMap<>();
                     updates.put("groupName", newName);
                     updates.put("maxMembers", newMax);
                     
+                    // Firestore에 수정된 정보 저장
                     firestoreRepository.updateGroup(groupId, updates).addOnSuccessListener(aVoid -> {
-                        if (getSupportActionBar() != null) {
-                            getSupportActionBar().setTitle(newName);
-                        }
+                        if (getSupportActionBar() != null) getSupportActionBar().setTitle(newName);
                         group.setGroupName(newName);
                         group.setMaxMembers(newMax);
-                        Toast.makeText(this, "그룹 정보가 수정되었습니다.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "그룹 정보를 수정함", Toast.LENGTH_SHORT).show();
                     });
                 })
                 .setNegativeButton("취소", null)
                 .create();
 
-        // 그룹 삭제 버튼 클릭 시 재확인
+        // 그룹 영구 삭제 로직
         btnDelete.setOnClickListener(v -> {
-            new android.app.AlertDialog.Builder(this)
+            new AlertDialog.Builder(this)
                     .setTitle("그룹 삭제")
-                    .setMessage("정말로 이 그룹을 삭제하시겠습니까? 모든 데이터가 영구적으로 삭제됩니다.")
+                    .setMessage("정말로 이 그룹을 삭제함? 데이터가 모두 지워짐")
                     .setPositiveButton("삭제", (d2, which2) -> {
                         dialog.dismiss();
-                        deleteGroup();
+                        deleteGroup(); // DB에서 완전 삭제
                     })
                     .setNegativeButton("취소", null)
                     .show();
@@ -436,27 +408,29 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 그룹을 Firestore 및 실시간 데이터베이스에서 삭제하는 함수
+     * Firestore와 RTDB 양쪽에서 그룹 데이터 완전 지움
      */
     private void deleteGroup() {
         firestoreRepository.deleteGroup(groupId).addOnSuccessListener(aVoid -> {
-            rtdbRepository.deleteGroupPresence(groupId);
-            Toast.makeText(this, "그룹이 삭제되었습니다.", Toast.LENGTH_SHORT).show();
-            finish();
-        }).addOnFailureListener(e -> Toast.makeText(this, "그룹 삭제 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show() );
+            rtdbRepository.deleteGroupPresence(groupId); // 실시간 상태 노드도 함께 지움
+            Toast.makeText(this, "그룹을 삭제함", Toast.LENGTH_SHORT).show();
+            finish(); // 삭제 후 화면 닫음
+        }).addOnFailureListener(e -> Toast.makeText(this, "삭제 실패함: " + e.getMessage(), Toast.LENGTH_SHORT).show() );
     }
 
     /**
-     * 멤버 카드 롱클릭 시 멤버 내보내기 다이얼로그를 표시
+     * 멤버 카드 롱클릭 시 추방(내보내기) 기능 수행
      */
     private void onMemberLongClick(MemberStatus status) {
+        // 내가 방장이고, 클릭한 대상이 내가 아닐 때만 추방 가능
         if (group != null && group.getAdminId().equals(currentUserId) && !status.getUserId().equals(currentUserId)) {
-            new android.app.AlertDialog.Builder(this)
+            new AlertDialog.Builder(this)
                     .setTitle("멤버 내보내기")
-                    .setMessage(status.getName() + "님을 그룹에서 내보내시겠습니까?")
+                    .setMessage(status.getName() + "님을 그룹에서 내보냄?")
                     .setPositiveButton("내보내기", (dialog, which) -> {
                         firestoreRepository.leaveGroup(groupId, status.getUserId()).addOnSuccessListener(aVoid -> {
-                            Toast.makeText(this, status.getName() + "님이 내보내졌습니다.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, status.getName() + "님을 내보냄", Toast.LENGTH_SHORT).show();
+                            // 리스너가 감지하여 목록에서 사라짐
                         });
                     })
                     .setNegativeButton("취소", null)
@@ -465,35 +439,36 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 실시간 데이터베이스로부터 그룹 멤버들의 상태 변경을 감시
+     * Firebase 실시간 DB(RTDB)로부터 멤버들의 현재 상태를 구독
+     * 데이터가 바뀔 때마다 리스트를 갱신하고 '오늘 집중 시간' 순으로 정렬
      */
     private void listenToPresence() {
         rtdbRepository.getGroupPresenceRef(groupId).addValueEventListener(new ValueEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                memberList.clear();
+            public void onDataChange(DataSnapshot snapshot) {
+                memberList.clear(); // 기존 목록 비움
                 for (DataSnapshot memberSnap : snapshot.getChildren()) {
                     MemberStatus status = memberSnap.getValue(MemberStatus.class);
-                    if (status != null) {
-                        memberList.add(status);
-                    }
+                    if (status != null) memberList.add(status);
                 }
 
-                // 오늘 총 집중 시간 기준 내림차순 정렬 (순위 매기기)
+                // 오늘 가장 많이 집중한 사람이 1등(상단)으로 오도록 정렬 (내림차순)
                 memberList.sort((m1, m2) ->
                         Long.compare(m2.getTodayFocusTime(), m1.getTodayFocusTime()));
 
-                adapter.notifyDataSetChanged();
+                adapter.notifyDataSetChanged(); // UI 갱신
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(DatabaseError error) {
+                Log.e("GroupDetail", "RTDB 감시 에러 발생함", error.toException());
+            }
         });
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        handler.removeCallbacks(timerRunnable);
+        handler.removeCallbacks(timerRunnable); // 메모리 누수 방지를 위해 콜백 제거
     }
 }

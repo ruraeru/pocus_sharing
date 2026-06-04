@@ -1,8 +1,7 @@
 /**
- * HomeFragment.java
- * 앱의 메인 화면으로, 개인 타이머 기능을 제공하고 오늘의 집중 기록을 보여줍니다.
+ * 앱의 메인 화면으로, 개인 타이머 기능 제공 및 오늘 집중 기록 표시
  * 사용자의 프로필 정보를 표시하고, 타이머 세션 결과를 Firestore에 저장하며
- * 실시간으로 그룹 멤버들과 상태를 공유합니다.
+ * 실시간으로 그룹 멤버들과 상태 공유
  */
 package com.example.pocussharing;
 
@@ -15,6 +14,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -37,42 +38,46 @@ import java.util.Locale;
 
 public class HomeFragment extends Fragment {
 
+    // [UI 컴포넌트 블록]
     private TimerView timerView;          // 원형 타이머 커스텀 뷰
     private TextView tvDigitalTimer;      // 디지털 형식의 남은 시간 텍스트
     private TextView tvDate;              // 현재 날짜 표시 텍스트
     private ImageView ivProfile;          // 사용자 프로필 이미지 뷰
+    private LinearLayout llTable;          // 기록 목록이 추가될 테이블 레이아웃
+    private RadioGroup rgStatus; // 집중/휴식 모드 전환용 라디오 그룹
+    private RadioButton rbFocus, rbRest;
+
+    // [데이터 및 로직 제어 블록]
     private FirebaseAuth mAuth;           // Firebase 인증 객체
     private FirestoreRepository repository; // Firestore 데이터 저장소
-    private RtdbRepository rtdbRepository; // 실시간 데이터베이스 저장소
-    private Handler handler = new Handler(Looper.getMainLooper()); // 타이머 카운트다운용 핸들러
-    private ListenerRegistration logsListener; // 타이머 로그 실시간 감시 리스너
-    
-    private long sessionStartTimeMillis;  // 현재 세션 시작 시간
-    private long timeLeft = 25 * 60 * 1000; // 남은 시간 (기본 25분)
-    private long totalSessionTime = 25 * 60 * 1000; // 현재 설정된 총 세션 시간
-    private final long FOCUS_TIME = 25 * 60 * 1000; // 집중 모드 기본 시간 (25분)
-    private final long REST_TIME = 5 * 60 * 1000;   // 휴식 모드 기본 시간 (5분)
+    private RtdbRepository rtdbRepository; // 실시간 데이터베이스(RTDB) 저장소
+    private final Handler handler = new Handler(Looper.getMainLooper()); // 1초 단위 카운트다운 핸들러
+    private ListenerRegistration logsListener; // 타이머 기록 실시간 감시 리스너
 
-    private boolean isRunning = false;     // 타이머 실행 중 여부
-    private boolean isFocusMode = true;    // 현재 집중 모드 여부
-    private android.widget.RadioGroup rgStatus; // 상태 선택(집중/휴식) 라디오 그룹
-    private android.widget.RadioButton rbFocus, rbRest;
-    private LinearLayout llTable;          // 기록 목록이 추가될 테이블 레이아웃
-    private int recordCount = 0;           // 표시된 기록 개수
-    private long totalCumulativeMillis = 0; // 오늘 총 누적 집중 시간
-    private String userNickname = "GUEST";  // 사용자 닉네임
-    private List<String> userGroupIds = new ArrayList<>(); // 사용자가 속한 그룹 ID 리스트
+    // [타이머 상태 데이터 블록]
+    private long sessionStartTimeMillis;  // 현재 세션 시작 시간 기록
+    private long timeLeft = 25 * 60 * 1000; // 남은 밀리초 (기본 25분)
+    private long totalSessionTime = 25 * 60 * 1000; // 설정된 총 세션 시간
+    private final long FOCUS_TIME = 25 * 60 * 1000; // 집중 기본: 25분
+    private final long REST_TIME = 5 * 60 * 1000;   // 휴식 기본: 5분
+
+    private boolean isRunning = false;     // 타이머 작동 여부
+    private boolean isFocusMode = true;    // 현재 모드 (True: 집중, False: 휴식)
+    private int recordCount = 0;           // 하단 테이블에 표시된 로그 개수
+    private long totalCumulativeMillis = 0; // 오늘 하루 전체 누적 집중 시간
+    private String userNickname = "GUEST";  // 사용자 닉네임 (기본값 GUEST)
+    private final List<String> userGroupIds = new ArrayList<>(); // 현재 가입된 그룹 ID 목록
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // 레이아웃 인플레이트
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         
         mAuth = FirebaseAuth.getInstance();
         repository = new FirestoreRepository();
         rtdbRepository = new RtdbRepository();
         
+        // 뷰 아이디 연결
         timerView = view.findViewById(R.id.timer_view);
         tvDigitalTimer = view.findViewById(R.id.tv_digital_timer);
         tvDate = view.findViewById(R.id.tv_date);
@@ -82,78 +87,77 @@ public class HomeFragment extends Fragment {
         rbFocus = view.findViewById(R.id.rb_focus);
         rbRest = view.findViewById(R.id.rb_rest);
 
-        // 현재 날짜 설정 (M월 d일 형식)
+        // 오늘 날짜 텍스트 세팅 (ex: 7월 16일)
         String dateStr = new java.text.SimpleDateFormat("M월 d일", Locale.KOREA).format(new Date());
         tvDate.setText(dateStr);
 
-        // 타이머 다이얼 조작 리스너 설정
+        // [이벤트 리스너 등록 블록]
+        // 타이머 원형 다이얼 직접 조작할 때의 동작 정의
         timerView.setOnTimerDialListener(new TimerView.OnTimerDialListener() {
             @Override
             public void onDialChanged(float progress) {
-                // 다이얼 조작 중에는 실행 중인 타이머 중지
-                if (isRunning) stopTimer();
-                long newTime = (long) (progress * 60 * 60 * 1000); // 60분 기준 진행률
+                if (isRunning) stopTimer(); // 조작 시작 시 작동 중인 타이머 멈춤
+                long newTime = (long) (progress * 60 * 60 * 1000); // 최대 60분 기준으로 비례 계산
                 timeLeft = newTime;
                 totalSessionTime = newTime;
-                updateDigitalTimer(timeLeft);
+                updateDigitalTimer(timeLeft); // 텍스트 즉시 갱신
             }
 
             @Override
             public void onDialSelected(float progress) {
-                toggleTimer(); // 다이얼 조작 완료 시 시작/정지 토글
+                toggleTimer(); // 조작 완료 시 타이머 시작 또는 정지
             }
         });
         
-        // 상태 변경(집중/휴식) 리스너 설정
+        // 집중/휴식 모드 변경 시 동작
         rgStatus.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.rb_focus) {
-                if (!isFocusMode) setMode(true);
+                if (!isFocusMode) setMode(true); // 집중 모드로 전환
             } else if (checkedId == R.id.rb_rest) {
-                if (isFocusMode) setMode(false);
+                if (isFocusMode) setMode(false); // 휴식 모드로 전환
             }
         });
 
-        // 초기 데이터 로딩
+        // [초기 데이터 로드]
         updateUI(totalSessionTime);
         loadUserProfile();
         loadTodayStats();
-        setupLogsListener();
+        setupLogsListener(); // 타이머 기록 감시 시작
         
         return view;
     }
 
     /**
-     * 사용자의 타이머 로그 목록의 변경 사항을 실시간으로 감시합니다.
+     * 타이머 기록(Log)의 실시간 변경을 감시
+     * Firestore 리스너를 통해 내가 기록을 올리면 목록에 바로 뜨게
      */
     private void setupLogsListener() {
         if (mAuth.getCurrentUser() == null) return;
         
         String uid = mAuth.getCurrentUser().getUid();
-        if (logsListener != null) logsListener.remove();
+        if (logsListener != null) logsListener.remove(); // 중복 등록 방지
 
         logsListener = repository.getTimerLogsListener(uid, (value, error) -> {
             if (error != null) {
-                Log.e("HomeFragment", "Logs listener failed", error);
+                Log.e("HomeFragment", "로그 감시 실패", error);
                 return;
             }
             if (value != null) {
-                Log.d("HomeFragment", "Real-time logs update. Count: " + value.size());
-                updateLogsTable(value.getDocuments());
+                updateLogsTable(value.getDocuments()); // 새 데이터로 테이블 갱신
             }
         });
     }
 
     /**
-     * 불러온 로그 목록을 사용하여 하단 기록 테이블을 갱신합니다.
+     * Firestore에서 가져온 로그 목록을 하단 UI 테이블에 그림
      */
     private void updateLogsTable(List<com.google.firebase.firestore.DocumentSnapshot> docs) {
-        // 기존 뷰 제거 및 카운트 초기화
-        llTable.removeAllViews();
+        llTable.removeAllViews(); // 기존 행 모두 삭제
         recordCount = 0;
 
         List<com.google.firebase.firestore.DocumentSnapshot> mutableDocs = new ArrayList<>(docs);
-        // 생성 시간 순으로 정렬 (오래된 순으로 정렬하여 테이블의 0번 인덱스에 추가함으로써 최신순 구현)
-        Collections.sort(mutableDocs, (d1, d2) -> {
+        // 생성 시간 순으로 정렬하여 최신순 구현
+        mutableDocs.sort((d1, d2) -> {
             com.google.firebase.Timestamp t1 = d1.getTimestamp("createdAt");
             com.google.firebase.Timestamp t2 = d2.getTimestamp("createdAt");
             if (t1 == null || t2 == null) return 0;
@@ -163,17 +167,13 @@ public class HomeFragment extends Fragment {
         for (com.google.firebase.firestore.DocumentSnapshot doc : mutableDocs) {
             TimerLog log = doc.toObject(TimerLog.class);
             if (log != null) {
-                addLogToTableUI(log);
+                addLogToTableUI(log); // 개별 행 UI에 추가
             }
-        }
-        
-        if (mutableDocs.isEmpty()) {
-            Log.d("HomeFragment", "No logs found in Firestore.");
         }
     }
 
     /**
-     * 개별 로그 기록을 UI 테이블(LinearLayout)에 행(Row)으로 추가합니다.
+     * 단일 로그 데이터를 XML(table_row)에 입혀서 레이아웃에 추가
      */
     private void addLogToTableUI(TimerLog log) {
         recordCount++;
@@ -182,6 +182,7 @@ public class HomeFragment extends Fragment {
         int minutes = (durationSec / 60) % 60;
         int hours = durationSec / 3600;
 
+        // 시간 포맷팅 (ex: 25분 30초)
         String timeStr;
         if (hours > 0) {
             timeStr = String.format(Locale.getDefault(), "%d시간 %d분 %d초", hours, minutes, seconds);
@@ -193,18 +194,18 @@ public class HomeFragment extends Fragment {
 
         String typeStr = log.getLogType().equals("FOCUS") ? "집중" : "휴식";
 
-        // 행 레이아웃 인플레이트 및 텍스트 설정
+        // [중요 구문] table_row 레이아웃 인플레이트하여 데이터 주입
         View row = getLayoutInflater().inflate(R.layout.table_row, llTable, false);
         ((TextView) row.findViewById(R.id.tv_no)).setText(String.valueOf(recordCount));
         ((TextView) row.findViewById(R.id.tv_time)).setText(timeStr);
         ((TextView) row.findViewById(R.id.tv_type)).setText(typeStr);
 
-        // 가장 위에 추가
-        llTable.addView(row, 0);
+        llTable.addView(row, 0); // 항상 가장 위에(최신순) 추가
     }
 
     /**
-     * 사용자의 프로필 정보(닉네임, 이미지)와 참여 중인 그룹 목록을 불러옵니다.
+     * 사용자 닉네임과 프로필 사진 로드
+     * 추가로 사용자가 속한 그룹 ID 목록도 가져와서 실시간 동기화 준비
      */
     private void loadUserProfile() {
         if (mAuth.getCurrentUser() != null) {
@@ -216,15 +217,13 @@ public class HomeFragment extends Fragment {
 
                     String profileImageUrl = documentSnapshot.getString("profileImageUrl");
                     if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
-                        Glide.with(this)
-                            .load(profileImageUrl)
-                            .circleCrop()
-                            .into(ivProfile);
+                        // Glide 라이브러리로 이미지 동그랗게 로드
+                        Glide.with(this).load(profileImageUrl).circleCrop().into(ivProfile);
                     }
                 }
             });
 
-            // 실시간 상태 공유를 위해 사용자가 참여 중인 그룹 ID 목록을 가져옵니다.
+            // 내가 속한 모든 그룹 찾아옴
             repository.getUserGroups(uid).addOnSuccessListener(queryDocumentSnapshots -> {
                 userGroupIds.clear();
                 for (com.google.firebase.firestore.DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
@@ -235,64 +234,54 @@ public class HomeFragment extends Fragment {
     }
 
     /**
-     * 오늘 총 누적 집중 시간을 불러와 UI를 갱신합니다.
+     * 오늘 하루 동안 누적된 총 집중 시간을 가져와 UI 세팅
      */
     private void loadTodayStats() {
         if (mAuth.getCurrentUser() != null) {
             String uid = mAuth.getCurrentUser().getUid();
             repository.getDailyFocusTime(uid).addOnSuccessListener(focusSec -> {
                 totalCumulativeMillis = focusSec * 1000L;
-                updateUI(timeLeft);
-            }).addOnFailureListener(e -> {
-                Log.e("HomeFragment", "Failed to load daily stats", e);
+                updateUI(timeLeft); // 누적 시간 포하여 UI 갱신
             });
         }
     }
 
     /**
-     * 타이머 모드(집중/휴식)를 설정하고 관련된 UI와 필드를 초기화합니다.
+     * 타이머 모드(집중/휴식) 강제 설정
+     * 작동 중일 경우 현재까지 한 시간을 기록하고 모드 바꿈
      */
     private void setMode(boolean isFocus) {
         if (isRunning) {
             long elapsed = totalSessionTime - timeLeft;
-            if (isFocusMode) {
-                totalCumulativeMillis += elapsed;
-            }
+            if (isFocusMode) totalCumulativeMillis += elapsed;
             stopTimer();
-            addRecordToTable();
+            addRecordToTable(); // 현재까지 세션 저장
         }
         isFocusMode = isFocus;
-        timerView.setMode(isFocus);
+        timerView.setMode(isFocus); // 타이머 뷰 색상 변경 (집중: 빨강, 휴식: 초록)
         totalSessionTime = isFocus ? FOCUS_TIME : REST_TIME;
         timeLeft = totalSessionTime;
         updateUI(timeLeft);
 
-        if (isFocus) {
-            rbFocus.setChecked(true);
-        } else {
-            rbRest.setChecked(true);
-        }
+        if (isFocus) rbFocus.setChecked(true); else rbRest.setChecked(true);
 
-        // 모드 변경 후 즉시 상태 동기화 (UI 갱신 유도)
-        syncStatusToRtdb();
+        syncStatusToRtdb(); // 바뀐 모드 실시간 DB에 동기화
     }
 
     /**
-     * 타이머 뷰와 디지털 타이머 텍스트를 업데이트하고 상태를 동기화합니다.
+     * 타이머 진행률(원형)과 디지털 텍스트를 한꺼번에 업데이트
      */
     private void updateUI(long millis) {
-        float progress = (float) millis / (60 * 60 * 1000); 
+        float progress = (float) millis / (60 * 60 * 1000); // 60분 대비 진행률
         timerView.setProgress(progress);
         
-        // 타이머가 작동 중일 때만 주기적으로 동기화 (정지 시엔 setMode나 stopTimer에서 별도 호출)
-        if (isRunning) {
-            syncStatusToRtdb();
-        }
+        if (isRunning) syncStatusToRtdb(); // 작동 중일 때만 주기적으로 동기화
         updateDigitalTimer(millis);
     }
 
     /**
-     * 현재 사용자의 실시간 타이머 상태를 참여 중인 모든 그룹에 동기화합니다.
+     * 현재 나의 타이머 상태를 가입된 모든 그룹 노드에 업데이트
+     * [주요 로직] 오늘 총 집중 시간에 현재 실시간으로 흐르고 있는 시간까지 합산하여 전송
      */
     private void syncStatusToRtdb() {
         if (mAuth.getCurrentUser() == null) return;
@@ -300,10 +289,10 @@ public class HomeFragment extends Fragment {
         
         long totalTodayFocus = totalCumulativeMillis;
         if (isRunning && isFocusMode) {
-            totalTodayFocus += (totalSessionTime - timeLeft);
+            totalTodayFocus += (totalSessionTime - timeLeft); // 현재 흐르는 시간 합산
         }
 
-        // 참여 중인 그룹이 없는 경우 기본 그룹에 동기화, 있는 경우 모든 그룹에 동기화
+        // 가입된 그룹이 없으면 'main_group'에, 있으면 각 그룹 노드에 정보 저장
         if (userGroupIds.isEmpty()) {
             rtdbRepository.updateUserStatus("main_group", uid, userNickname, isFocusMode, timeLeft, totalTodayFocus);
         } else {
@@ -314,142 +303,109 @@ public class HomeFragment extends Fragment {
     }
 
     /**
-     * 디지털 타이머 형식(HH:mm:ss)으로 시간을 표시합니다.
+     * HH:mm:ss 형식으로 텍스트 변환
      */
     private void updateDigitalTimer(long millis) {
         int seconds = (int) (millis / 1000);
-        int minutes = seconds / 60;
-        int hours = minutes / 60;
-        seconds = seconds % 60;
-        minutes = minutes % 60;
-        tvDigitalTimer.setText(String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds));
+        int m = (seconds / 60) % 60;
+        int h = seconds / 3600;
+        int s = seconds % 60;
+        tvDigitalTimer.setText(String.format(Locale.getDefault(), "%02d:%02d:%02d", h, m, s));
     }
 
     /**
-     * 타이머 시작/정지를 전환합니다. 정지 시 기록을 저장합니다.
+     * 타이머 작동 상태를 토글(Start/Stop)
      */
     private void toggleTimer() {
         if (isRunning) {
             long elapsed = totalSessionTime - timeLeft;
-            if (isFocusMode) {
-                totalCumulativeMillis += elapsed;
-            }
+            if (isFocusMode) totalCumulativeMillis += elapsed;
             stopTimer();
-            addRecordToTable();
+            addRecordToTable(); // 결과 저장
 
-            // 타이머 정지 시 자동으로 휴식 모드로 전환
-            if (isFocusMode) {
-                setMode(false);
-            }
+            if (isFocusMode) setMode(false); // 집중 끝났으면 자동으로 휴식 모드 제안
         } else {
-            if (timeLeft > 0) {
-                startTimer();
-            }
+            if (timeLeft > 0) startTimer();
         }
     }
 
     /**
-     * 타이머 작동을 멈추고 핸들러 콜백을 제거합니다.
+     * 타이머 작동 중지하고 콜백 제거
      */
     private void stopTimer() {
         isRunning = false;
         handler.removeCallbacks(timerRunnable);
         updateUI(timeLeft);
-        syncStatusToRtdb(); // 최종 상태 동기화
+        syncStatusToRtdb(); // 최종 멈춘 상태 전송
     }
 
     /**
-     * 타이머를 시작하고 카운트다운 핸들러를 실행합니다.
+     * 타이머 작동 시작하고 세션 시작 시간 기록
      */
     private void startTimer() {
         if (!isRunning) {
             isRunning = true;
             sessionStartTimeMillis = System.currentTimeMillis();
-            handler.postDelayed(timerRunnable, 1000);
+            handler.postDelayed(timerRunnable, 1000); // 1초 뒤부터 반복 실행
         }
     }
 
     /**
-     * 현재 세션의 경과 시간을 확인하여 Firebase에 기록을 요청합니다.
+     * 현재 타이머가 진행된 시간을 계산하여 Firestore에 로그 저장 요청
      */
     private void addRecordToTable() {
         long currentSessionElapsed = totalSessionTime - timeLeft;
         if (currentSessionElapsed <= 0) return;
 
-        saveLogToFirebase(currentSessionElapsed);
-    }
-
-    /**
-     * 타이머 로그 객체를 생성하여 Firestore에 저장합니다.
-     */
-    private void saveLogToFirebase(long durationMillis) {
-        if (mAuth.getCurrentUser() == null) return;
-
         String uid = mAuth.getCurrentUser().getUid();
         String logType = isFocusMode ? "FOCUS" : "REST";
-        int durationSec = (int) (durationMillis / 1000);
-        
-        if (durationSec <= 0) return;
+        int durationSec = (int) (currentSessionElapsed / 1000);
 
         TimerLog log = new TimerLog(
-            uid,
-            logType,
-            durationSec,
+            uid, logType, durationSec,
             new Timestamp(new Date(sessionStartTimeMillis)),
             Timestamp.now()
         );
 
         repository.saveTimerLog(log)
-            .addOnSuccessListener(aVoid -> {
-                Log.d("Firebase", "Timer log and stats updated!");
-                // 리스너에 의해 테이블은 자동으로 갱신됩니다.
-            })
-            .addOnFailureListener(e -> Log.e("Firebase", "Failed to save log", e));
+            .addOnSuccessListener(aVoid -> Log.d("Firebase", "기록 저장 완료"))
+            .addOnFailureListener(e -> Log.e("Firebase", "기록 저장 실패", e));
     }
 
     /**
-     * 1초마다 남은 시간을 줄이고 UI를 갱신하는 런어블 객체입니다.
+     * [핵심 루프] 1초마다 스스로를 호출하여 시간을 줄여나가는 Runnable 객체
      */
-    private Runnable timerRunnable = new Runnable() {
+    private final Runnable timerRunnable = new Runnable() {
         @Override
         public void run() {
-            timeLeft -= 1000;
+            timeLeft -= 1000; // 1초 뺌
             if (timeLeft <= 0) {
                 timeLeft = 0;
-                if (isFocusMode) {
-                    totalCumulativeMillis += totalSessionTime;
-                }
+                if (isFocusMode) totalCumulativeMillis += totalSessionTime;
                 updateUI(timeLeft);
                 stopTimer();
                 addRecordToTable();
-
-                // 타이머 종료 시 자동으로 휴식 모드로 전환
-                if (isFocusMode) {
-                    setMode(false);
-                }
+                if (isFocusMode) setMode(false); // 자동 휴식 전환
                 return;
             }
 
             updateUI(timeLeft);
-            handler.postDelayed(this, 1000);
+            handler.postDelayed(this, 1000); // 1초 후에 다시 실행
         }
     };
 
     @Override
     public void onResume() {
         super.onResume();
-        // 화면으로 돌아올 때마다 최신 정보 로딩
+        // 화면 돌아올 때마다 정보 갱신
         loadUserProfile();
         loadTodayStats();
-        setupLogsListener();
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         handler.removeCallbacks(timerRunnable);
-        if (logsListener != null) {
-            logsListener.remove();
-        }
+        if (logsListener != null) logsListener.remove(); // 리스너 해제하여 메모리 관리
     }
 }
