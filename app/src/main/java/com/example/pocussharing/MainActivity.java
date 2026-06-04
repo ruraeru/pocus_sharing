@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Navigation Component를 사용하여 하단 네비게이션 바와 프래그먼트 호스트를 연결합니다.
+     * Navigation Component를 사용하여 하단 네비게이션 바와 프래그먼트 호스트를 연결
      */
     private void setupNavigation() {
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * 사용자가 인증되지 않은 경우 익명으로 Firebase에 로그인합니다.
+     * 사용자가 인증되지 않은 경우 익명으로 Firebase에 로그인
      */
     private void signInAnonymously() {
         mAuth.signInAnonymously()

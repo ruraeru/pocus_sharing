@@ -48,7 +48,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     /**
-     * 카카오 로그인을 수행합니다.
+     * 카카오 로그인을 수행
      */
     private void loginWithKakao() {
         // 로그인 결과 처리를 위한 콜백
@@ -72,11 +72,10 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     /**
-     * Firestore 보안 규칙을 충족하기 위해 Firebase 익명 인증을 수행합니다.
+     * Firestore 보안 규칙을 충족하기 위해 Firebase 익명 인증을 수행
      */
     private void firebaseSignIn() {
-        // 실제 앱에서는 카카오 토큰을 사용하여 커스텀 토큰 방식으로 로그인하는 것이 좋으나,
-        // 여기서는 간단하게 익명 인증을 사용합니다.
+        // 익명 인증을 사용
         mAuth.signInAnonymously().addOnCompleteListener(this, task -> {
             if (task.isSuccessful()) {
                 Log.d(TAG, "Firebase 익명 로그인 성공");
@@ -89,7 +88,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     /**
-     * 카카오로부터 사용자 정보를 가져오고 Firestore에 동기화합니다.
+     * 카카오로부터 사용자 정보를 가져오고 Firestore에 동기화
      */
     private void fetchUserInfo() {
         UserApiClient.getInstance().me((user, error) -> {
@@ -137,7 +136,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     /**
-     * 메인 화면으로 이동합니다.
+     * 메인 화면으로 이동
      */
     private void navigateToMain() {
         Intent intent = new Intent(this, MainActivity.class);

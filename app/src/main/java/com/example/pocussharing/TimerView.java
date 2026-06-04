@@ -10,6 +10,7 @@ import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 /**
  * 타이머의 원형 다이얼을 표시하고 사용자의 터치 입력을 통해 시간을 설정할 수 있는 커스텀 뷰
@@ -116,7 +117,7 @@ public class TimerView extends View {
      * 커스텀 뷰를 그리는 로직
      */
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
 
         int width = getWidth();
