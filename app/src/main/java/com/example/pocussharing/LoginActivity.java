@@ -37,7 +37,10 @@ public class LoginActivity extends AppCompatActivity {
         UserApiClient.getInstance().me((user, error) -> {
             if (user != null) {
                 Log.i(TAG, "자동 로그인 성공. 사용자 닉네임: " + user.getKakaoAccount().getProfile().getNickname());
-                firebaseSignIn();
+                String nickname = user.getKakaoAccount().getProfile().getNickname();
+                String profileImageUrl = user.getKakaoAccount().getProfile().getThumbnailImageUrl();
+                String kakaoId = String.valueOf(user.getId());
+                firebaseSignInWithKakao(kakaoId, nickname, profileImageUrl);
             }
             return Unit.INSTANCE;
         });
@@ -58,7 +61,7 @@ public class LoginActivity extends AppCompatActivity {
                 Toast.makeText(LoginActivity.this, "로그인 실패: " + error.getMessage(), Toast.LENGTH_SHORT).show();
             } else if (token != null) {
                 Log.i(TAG, "카카오 로그인 성공");
-                firebaseSignIn();
+                fetchKakaoUserInfoAndSignInFirebase();
             }
             return Unit.INSTANCE;
         };
@@ -72,66 +75,102 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     /**
-     * Firestore 보안 규칙을 충족하기 위해 Firebase 익명 인증을 수행
+     * 카카오로부터 사용자 정보를 가져와서 Firebase 로그인을 실행함
      */
-    private void firebaseSignIn() {
-        // 익명 인증을 사용
-        mAuth.signInAnonymously().addOnCompleteListener(this, task -> {
-            if (task.isSuccessful()) {
-                Log.d(TAG, "Firebase 익명 로그인 성공");
-                fetchUserInfo();
-            } else {
-                Log.e(TAG, "Firebase 익명 로그인 실패", task.getException());
-                fetchUserInfo(); // 정보 조회 및 메인 이동을 위해 계속 진행
-            }
-        });
-    }
-
-    /**
-     * 카카오로부터 사용자 정보를 가져오고 Firestore에 동기화
-     */
-    private void fetchUserInfo() {
+    private void fetchKakaoUserInfoAndSignInFirebase() {
         UserApiClient.getInstance().me((user, error) -> {
             if (error != null) {
-                Log.e(TAG, "사용자 정보 요청 실패", error);
-                navigateToMain(); // 정보 요청에 실패해도 일단 메인으로 이동
+                Log.e(TAG, "카카오 사용자 정보 요청 실패", error);
+                Toast.makeText(LoginActivity.this, "사용자 정보 조회 실패", Toast.LENGTH_SHORT).show();
             } else if (user != null) {
                 String nickname = user.getKakaoAccount().getProfile().getNickname();
                 String profileImageUrl = user.getKakaoAccount().getProfile().getThumbnailImageUrl();
                 String kakaoId = String.valueOf(user.getId());
                 Log.i(TAG, "사용자 정보 요청 성공. 닉네임: " + nickname);
-                
-                // Firebase 인증 사용자가 있는 경우 Firestore에 사용자 정보 저장 또는 업데이트
-                if (mAuth.getCurrentUser() != null) {
-                    String uid = mAuth.getCurrentUser().getUid();
-                    com.example.pocussharing.repository.FirestoreRepository repo = new com.example.pocussharing.repository.FirestoreRepository();
-                    
-                    repo.getUser(uid).addOnCompleteListener(task -> {
-                        if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
-                            // 기존 사용자: 카카오 ID와 프로필 이미지만 업데이트 (닉네임은 사용자가 변경했을 수 있으므로 유지)
-                            Map<String, Object> updates = new HashMap<>();
-                            updates.put("kakaoId", kakaoId);
-                            updates.put("profileImageUrl", profileImageUrl);
-                            com.google.firebase.firestore.FirebaseFirestore.getInstance()
-                                .collection("users").document(uid)
-                                .update(updates)
-                                .addOnSuccessListener(aVoid -> Log.d(TAG, "기존 사용자 정보 업데이트 성공 (닉네임 보존)"))
-                                .addOnFailureListener(e -> Log.e(TAG, "기존 사용자 정보 업데이트 실패", e));
-                        } else {
-                            // 신규 사용자: 전체 프로필 생성
-                            com.example.pocussharing.model.User firestoreUser = new com.example.pocussharing.model.User(uid, kakaoId, nickname);
-                            firestoreUser.setProfileImageUrl(profileImageUrl);
-                            repo.saveUser(firestoreUser)
-                                .addOnSuccessListener(aVoid -> Log.d(TAG, "신규 사용자 Firestore 저장 성공"))
-                                .addOnFailureListener(e -> Log.e(TAG, "신규 사용자 Firestore 저장 실패", e));
-                        }
-                    });
-                }
-
-                Toast.makeText(this, nickname + "님 환영합니다!", Toast.LENGTH_SHORT).show();
-                navigateToMain();
+                firebaseSignInWithKakao(kakaoId, nickname, profileImageUrl);
             }
             return Unit.INSTANCE;
+        });
+    }
+
+    /**
+     * 카카오 ID를 기반으로 Firebase 이메일/비밀번호 로그인을 연동하여
+     * 사용자가 기기를 변경하거나 로그아웃 후 다시 로그인하더라도 동일한 UID를 가질 수 있도록 보장함.
+     */
+    private void firebaseSignInWithKakao(String kakaoId, String nickname, String profileImageUrl) {
+        String email = "kakao_" + kakaoId + "@pocussharing.com";
+        String password = "kakao_pass_" + kakaoId;
+
+        mAuth.signInWithEmailAndPassword(email, password)
+            .addOnCompleteListener(this, task -> {
+                if (task.isSuccessful()) {
+                    Log.d(TAG, "Firebase Kakao 연동 로그인 성공");
+                    syncUserToFirestore(mAuth.getCurrentUser().getUid(), kakaoId, nickname, profileImageUrl);
+                } else {
+                    Exception exception = task.getException();
+                    if (exception instanceof com.google.firebase.auth.FirebaseAuthInvalidUserException) {
+                        // 계정이 없는 신규 유저이므로 회원가입 진행
+                        mAuth.createUserWithEmailAndPassword(email, password)
+                            .addOnCompleteListener(this, createAttempt -> {
+                                if (createAttempt.isSuccessful()) {
+                                    Log.d(TAG, "Firebase Kakao 연동 회원가입 성공");
+                                    syncUserToFirestore(mAuth.getCurrentUser().getUid(), kakaoId, nickname, profileImageUrl);
+                                } else {
+                                    Log.e(TAG, "Firebase Kakao 연동 회원가입 실패", createAttempt.getException());
+                                    signInAnonymouslyFallback(kakaoId, nickname, profileImageUrl);
+                                }
+                            });
+                    } else {
+                        Log.e(TAG, "Firebase 로그인 실패 (기타 에러)", exception);
+                        signInAnonymouslyFallback(kakaoId, nickname, profileImageUrl);
+                    }
+                }
+            });
+    }
+
+    /**
+     * 이메일/비밀번호 로그인이 모종의 이유로 실패했을 경우, 서비스 이용이 중단되지 않도록 익명 로그인으로 전환하는 폴백 장치
+     */
+    private void signInAnonymouslyFallback(String kakaoId, String nickname, String profileImageUrl) {
+        mAuth.signInAnonymously().addOnCompleteListener(this, task -> {
+            if (task.isSuccessful()) {
+                Log.d(TAG, "익명 로그인 성공 (폴백)");
+                syncUserToFirestore(mAuth.getCurrentUser().getUid(), kakaoId, nickname, profileImageUrl);
+            } else {
+                Log.e(TAG, "익명 로그인 실패 (폴백)", task.getException());
+                navigateToMain();
+            }
+        });
+    }
+
+    /**
+     * Firebase 인증 UID와 카카오 프로필 데이터를 Firestore 데이터베이스와 연동함.
+     * 기존 유저라면 닉네임과 환경설정 데이터를 보존하고 카카오 ID/프로필 이미지만 업데이트함.
+     */
+    private void syncUserToFirestore(String uid, String kakaoId, String nickname, String profileImageUrl) {
+        com.example.pocussharing.repository.FirestoreRepository repo = new com.example.pocussharing.repository.FirestoreRepository();
+        repo.getUser(uid).addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                // 기존 사용자: 카카오 ID와 프로필 이미지만 업데이트 (닉네임 및 사용자 설정 보존)
+                Map<String, Object> updates = new HashMap<>();
+                updates.put("kakaoId", kakaoId);
+                updates.put("profileImageUrl", profileImageUrl);
+                com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                    .collection("users").document(uid)
+                    .update(updates)
+                    .addOnSuccessListener(aVoid -> Log.d(TAG, "기존 사용자 정보 업데이트 성공 (닉네임/설정 보존)"))
+                    .addOnFailureListener(e -> Log.e(TAG, "기존 사용자 정보 업데이트 실패", e));
+            } else {
+                // 신규 사용자: 전체 프로필 생성
+                com.example.pocussharing.model.User firestoreUser = new com.example.pocussharing.model.User(uid, kakaoId, nickname);
+                firestoreUser.setProfileImageUrl(profileImageUrl);
+                repo.saveUser(firestoreUser)
+                    .addOnSuccessListener(aVoid -> Log.d(TAG, "신규 사용자 Firestore 저장 성공"))
+                    .addOnFailureListener(e -> Log.e(TAG, "신규 사용자 Firestore 저장 실패", e));
+            }
+            
+            Toast.makeText(this, nickname + "님 환영합니다!", Toast.LENGTH_SHORT).show();
+            navigateToMain();
         });
     }
 
