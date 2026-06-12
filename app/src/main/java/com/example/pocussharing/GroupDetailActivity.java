@@ -194,7 +194,7 @@ public class GroupDetailActivity extends AppCompatActivity {
     private void setMode(boolean isFocus) {
         if (isRunning) {
             long elapsed = totalSessionTime - timeLeft;
-            if (isFocusMode && isFocus) totalCumulativeMillis += elapsed; // 집중 중이었으면 누적
+            if (isFocusMode) totalCumulativeMillis += elapsed; // 집중 중이었으면 누적
             stopTimer();
             saveLogToFirebase(); // 이전 세션 기록
         }
