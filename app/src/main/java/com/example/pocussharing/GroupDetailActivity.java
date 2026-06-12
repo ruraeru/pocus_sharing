@@ -345,6 +345,12 @@ public class GroupDetailActivity extends AppCompatActivity {
                 group = documentSnapshot.toObject(Group.class);
                 if (group != null) {
                     group.setGroupId(documentSnapshot.getId());
+
+                    // 그룹명 실시간 반영
+                    if (getSupportActionBar() != null && group.getGroupName() != null) {
+                        getSupportActionBar().setTitle(group.getGroupName());
+                    }
+
                     // 방장 UID와 내 UID가 같으면 관리 버튼 노출
                     if (group.getAdminId().equals(currentUserId)) {
                         btnManage.setVisibility(View.VISIBLE);
