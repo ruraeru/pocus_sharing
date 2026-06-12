@@ -183,11 +183,15 @@ public class FirestoreRepository {
         });
     }
 
-    /**
-     * 특정 그룹의 상세 메타데이터 정보를 가져옴
-     */
     public Task<DocumentSnapshot> getGroup(String groupId) {
         return db.collection(GROUPS_COLLECTION).document(groupId).get();
+    }
+
+    /**
+     * 특정 그룹의 메타데이터 실시간 감시 등록
+     */
+    public ListenerRegistration listenToGroup(String groupId, EventListener<DocumentSnapshot> listener) {
+        return db.collection(GROUPS_COLLECTION).document(groupId).addSnapshotListener(listener);
     }
 
     /* =================================================================================

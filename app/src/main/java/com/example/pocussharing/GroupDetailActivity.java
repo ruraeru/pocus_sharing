@@ -32,6 +32,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -54,6 +55,11 @@ public class GroupDetailActivity extends AppCompatActivity {
     private final List<MemberStatus> memberList = new ArrayList<>(); // 실시간 멤버 데이터 리스트
     private Group group;                  // 현재 그룹의 메타데이터(이름, 초대코드 등) 정보
     private ImageButton btnManage;        // 그룹장 전용 관리 단추
+
+    // 실시간 리스너 및 캐시 스냅샷 관리
+    private ListenerRegistration groupListenerRegistration;
+    private ValueEventListener presenceListener;
+    private DataSnapshot latestPresenceSnapshot;
 
     private TimerView personalTimerView;  // 중앙 원형 타이머
     private TextView tvPersonalDigitalTimer; // 디지털 시간 텍스트
@@ -325,31 +331,42 @@ public class GroupDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * 그룹 메타데이터 로드하고 내가 방장인지 확인
+     * 그룹 메타데이터 로드하고 내가 방장인지 확인 (실시간 감시)
      */
     private void loadGroupInfo() {
         if (groupId.equals("main_group")) return;
 
-        firestoreRepository.getGroup(groupId).addOnSuccessListener(documentSnapshot -> {
-            group = documentSnapshot.toObject(Group.class);
-            if (group != null) {
-                group.setGroupId(documentSnapshot.getId());
-                // 방장 UID와 내 UID가 같으면 관리 버튼 노출
-                if (group.getAdminId().equals(currentUserId)) {
-                    btnManage.setVisibility(View.VISIBLE);
-                }
-
-                // 초대 코드 텍스트 세팅 및 복사 기능 활성화
-                String groupCode = group.getGroupCode();
-                tvGroupCodeValue.setText(groupCode != null ? groupCode : "-");
-                llInviteCodeContainer.setOnClickListener(v -> {
-                    if (groupCode != null) {
-                        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-                        ClipData clip = ClipData.newPlainText("Group Code", groupCode);
-                        clipboard.setPrimaryClip(clip);
-                        Toast.makeText(this, "초대 코드를 복사함", Toast.LENGTH_SHORT).show();
+        groupListenerRegistration = firestoreRepository.listenToGroup(groupId, (documentSnapshot, e) -> {
+            if (e != null) {
+                Log.e("GroupDetail", "그룹 정보 감시 실패", e);
+                return;
+            }
+            if (documentSnapshot != null && documentSnapshot.exists()) {
+                group = documentSnapshot.toObject(Group.class);
+                if (group != null) {
+                    group.setGroupId(documentSnapshot.getId());
+                    // 방장 UID와 내 UID가 같으면 관리 버튼 노출
+                    if (group.getAdminId().equals(currentUserId)) {
+                        btnManage.setVisibility(View.VISIBLE);
+                    } else {
+                        btnManage.setVisibility(View.GONE);
                     }
-                });
+
+                    // 초대 코드 텍스트 세팅 및 복사 기능 활성화
+                    String groupCode = group.getGroupCode();
+                    tvGroupCodeValue.setText(groupCode != null ? groupCode : "-");
+                    llInviteCodeContainer.setOnClickListener(v -> {
+                        if (groupCode != null) {
+                            ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                            ClipData clip = ClipData.newPlainText("Group Code", groupCode);
+                            clipboard.setPrimaryClip(clip);
+                            Toast.makeText(this, "초대 코드를 복사함", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+                    // 그룹 멤버 갱신에 따른 UI 리스트 새로고침
+                    refreshMemberList();
+                }
             }
         });
     }
@@ -430,7 +447,8 @@ public class GroupDetailActivity extends AppCompatActivity {
                     .setPositiveButton("내보내기", (dialog, which) -> {
                         firestoreRepository.leaveGroup(groupId, status.getUserId()).addOnSuccessListener(aVoid -> {
                             Toast.makeText(this, status.getName() + "님을 내보냄", Toast.LENGTH_SHORT).show();
-                            // 리스너가 감지하여 목록에서 사라짐
+                            // RTDB에서도 해당 유저의 상태 노드를 즉각 제거 (Best-effort 클린업)
+                            rtdbRepository.removeUserStatus(groupId, status.getUserId());
                         });
                     })
                     .setNegativeButton("취소", null)
@@ -440,35 +458,57 @@ public class GroupDetailActivity extends AppCompatActivity {
 
     /**
      * Firebase 실시간 DB(RTDB)로부터 멤버들의 현재 상태를 구독
-     * 데이터가 바뀔 때마다 리스트를 갱신하고 '오늘 집중 시간' 순으로 정렬
      */
     private void listenToPresence() {
-        rtdbRepository.getGroupPresenceRef(groupId).addValueEventListener(new ValueEventListener() {
+        presenceListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
-                memberList.clear(); // 기존 목록 비움
-                for (DataSnapshot memberSnap : snapshot.getChildren()) {
-                    MemberStatus status = memberSnap.getValue(MemberStatus.class);
-                    if (status != null) memberList.add(status);
-                }
-
-                // 오늘 가장 많이 집중한 사람이 1등(상단)으로 오도록 정렬 (내림차순)
-                memberList.sort((m1, m2) ->
-                        Long.compare(m2.getTodayFocusTime(), m1.getTodayFocusTime()));
-
-                adapter.notifyDataSetChanged(); // UI 갱신
+                latestPresenceSnapshot = snapshot;
+                refreshMemberList();
             }
 
             @Override
             public void onCancelled(DatabaseError error) {
                 Log.e("GroupDetail", "RTDB 감시 에러 발생함", error.toException());
             }
-        });
+        };
+        rtdbRepository.getGroupPresenceRef(groupId).addValueEventListener(presenceListener);
+    }
+
+    /**
+     * 현재 수신된 실시간 상태 스냅샷을 기반으로 그룹원 리스트를 정렬 및 갱신함
+     * (Firestore의 실제 그룹 멤버 목록에 속한 유저만 노출하여 추방 직후 즉시 리스트에서 사라지게 함)
+     */
+    private void refreshMemberList() {
+        if (latestPresenceSnapshot == null) return;
+
+        memberList.clear(); // 기존 목록 비움
+        for (DataSnapshot memberSnap : latestPresenceSnapshot.getChildren()) {
+            MemberStatus status = memberSnap.getValue(MemberStatus.class);
+            if (status != null) {
+                // 메인 그룹(전체)이거나, 일반 그룹이면서 그룹 멤버 ID 목록에 존재하는 유저만 리스트에 추가
+                if (groupId.equals("main_group") || (group != null && group.getMemberIds() != null && group.getMemberIds().contains(status.getUserId()))) {
+                    memberList.add(status);
+                }
+            }
+        }
+
+        // 오늘 가장 많이 집중한 사람이 1등(상단)으로 오도록 정렬 (내림차순)
+        memberList.sort((m1, m2) ->
+                Long.compare(m2.getTodayFocusTime(), m1.getTodayFocusTime()));
+
+        adapter.notifyDataSetChanged(); // UI 갱신
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (groupListenerRegistration != null) {
+            groupListenerRegistration.remove();
+        }
+        if (presenceListener != null) {
+            rtdbRepository.getGroupPresenceRef(groupId).removeEventListener(presenceListener);
+        }
         handler.removeCallbacks(timerRunnable); // 메모리 누수 방지를 위해 콜백 제거
     }
 }
