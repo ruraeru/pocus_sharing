@@ -101,28 +101,38 @@ public class LoginActivity extends AppCompatActivity {
         String email = "kakao_" + kakaoId + "@pocussharing.com";
         String password = "kakao_pass_" + kakaoId;
 
-        mAuth.signInWithEmailAndPassword(email, password)
+        // 회원 가입을 먼저 시도함 (이미 계정이 있으면 collision 예외가 던져지므로 로그인으로 전환)
+        mAuth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this, task -> {
                 if (task.isSuccessful()) {
-                    Log.d(TAG, "Firebase Kakao 연동 로그인 성공");
+                    Log.d(TAG, "Firebase Kakao 연동 회원가입 및 로그인 성공");
                     syncUserToFirestore(mAuth.getCurrentUser().getUid(), kakaoId, nickname, profileImageUrl);
                 } else {
                     Exception exception = task.getException();
-                    if (exception instanceof com.google.firebase.auth.FirebaseAuthInvalidUserException) {
-                        // 계정이 없는 신규 유저이므로 회원가입 진행
-                        mAuth.createUserWithEmailAndPassword(email, password)
-                            .addOnCompleteListener(this, createAttempt -> {
-                                if (createAttempt.isSuccessful()) {
-                                    Log.d(TAG, "Firebase Kakao 연동 회원가입 성공");
+                    if (exception instanceof com.google.firebase.auth.FirebaseAuthUserCollisionException) {
+                        // 이미 가입된 계정이므로 로그인 시도
+                        mAuth.signInWithEmailAndPassword(email, password)
+                            .addOnCompleteListener(this, loginTask -> {
+                                if (loginTask.isSuccessful()) {
+                                    Log.d(TAG, "Firebase Kakao 연동 로그인 성공");
                                     syncUserToFirestore(mAuth.getCurrentUser().getUid(), kakaoId, nickname, profileImageUrl);
                                 } else {
-                                    Log.e(TAG, "Firebase Kakao 연동 회원가입 실패", createAttempt.getException());
+                                    Log.e(TAG, "Firebase Kakao 연동 로그인 실패 (collision 후)", loginTask.getException());
                                     signInAnonymouslyFallback(kakaoId, nickname, profileImageUrl);
                                 }
                             });
                     } else {
-                        Log.e(TAG, "Firebase 로그인 실패 (기타 에러)", exception);
-                        signInAnonymouslyFallback(kakaoId, nickname, profileImageUrl);
+                        Log.e(TAG, "Firebase 회원가입 실패 (기타 에러)", exception);
+                        // 기타 에러 시에도 계정이 이미 존재하는지 확인하기 위해 로그인을 한 번 시도함
+                        mAuth.signInWithEmailAndPassword(email, password)
+                            .addOnCompleteListener(this, loginTask -> {
+                                if (loginTask.isSuccessful()) {
+                                    Log.d(TAG, "Firebase Kakao 연동 로그인 성공 (회원가입 기타에러 폴백)");
+                                    syncUserToFirestore(mAuth.getCurrentUser().getUid(), kakaoId, nickname, profileImageUrl);
+                                } else {
+                                    signInAnonymouslyFallback(kakaoId, nickname, profileImageUrl);
+                                }
+                            });
                     }
                 }
             });
