@@ -216,9 +216,9 @@ public class FirestoreRepository {
         int focusInc = log.getLogType().equals("FOCUS") ? log.getDurationSeconds() : 0;
         int restInc = log.getLogType().equals("REST") ? log.getDurationSeconds() : 0;
 
-        /**
+        /*
          * [중요 구문: FieldValue.increment 및 SetOptions.merge]
-         * 1. increment(증가분): 기존 서버 데이터 값에 즉시 안전하게 값을 더해줌. 
+         * 1. increment(증가분): 기존 서버 데이터 값에 즉시 안전하게 값을 더해줌.
          *    여러 사용자가 동시에 접속해도 데이터 레이스 컨디션(동기화 오류)이 발생하지 않음.
          * 2. merge(): 문서가 존재하지 않으면 새로 생성하고, 있으면 해당 필드만 병합(덮어쓰기)함.
          */

@@ -50,7 +50,7 @@ public class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.ViewHolder
         // 현재 행의 데이터 모델을 가져옴
         MemberStatus status = list.get(position);
 
-        // 1. 순위 표시 (리스트 인덱스는 0부터이므로 +1 해줌)
+        // 순위 표시 (리스트 인덱스는 0부터이므로 +1 해줌)
         holder.tvRank.setText(String.valueOf(position + 1));
 
         // 1등은 특별히 빨간색으로 강조
@@ -60,28 +60,28 @@ public class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.ViewHolder
             holder.tvRank.setTextColor(0xFF666666); // 기본 회색
         }
 
-        // 2. 멤버 닉네임 세팅
+        // 멤버 닉네임 세팅
         holder.tvName.setText(status.getName());
 
-        // 3. 현재 모드(집중/휴식) 및 색상 설정
+        // 현재 모드(집중/휴식) 및 색상 설정
         holder.tvFocus.setText(status.isFocus() ? "집중" : "휴식");
         holder.tvFocus.setTextColor(status.isFocus() ? 0xFFCC3333 : 0xFF4CAF50);
 
-        // 4. 타이머 남은 시간 포맷팅 (HH:mm:ss)
+        // 타이머 남은 시간 포맷팅 (HH:mm:ss)
         int seconds = (int) (status.getTimeLeft() / 1000);
         int h = seconds / 3600;
         int m = (seconds % 3600) / 60;
         int s = seconds % 60;
         holder.tvTime.setText(String.format(Locale.getDefault(), "%02d:%02d:%02d", h, m, s));
 
-        // 5. 오늘 하루 총 누적 집중 시간 표시
+        // 오늘 하루 총 누적 집중 시간 표시
         long totalSec = status.getTodayFocusTime() / 1000;
         long th = totalSec / 3600;
         long tm = (totalSec % 3600) / 60;
         long ts = totalSec % 60;
         holder.tvTotalToday.setText(String.format(Locale.getDefault(), "오늘\n %d시간 %d분 %d초", th, tm, ts));
 
-        // 6. 롱클릭 시 추방 다이얼로그 호출용 리스너 연결
+        // 롱클릭 시 추방 다이얼로그 호출용 리스너 연결
         holder.itemView.setOnLongClickListener(v -> {
             longClickListener.onLongClick(status);
             return true; // 이벤트 소비

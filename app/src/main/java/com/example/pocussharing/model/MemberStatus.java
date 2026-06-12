@@ -1,5 +1,7 @@
 package com.example.pocussharing.model;
 
+import com.google.firebase.database.PropertyName;
+
 /**
  * Realtime Database에서 그룹 멤버들의 실시간 상태(집중 여부, 남은 시간 등)를 공유하기 위한 DTO
  */
@@ -18,7 +20,11 @@ public class MemberStatus {
     public void setUserId(String userId) { this.userId = userId; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    @PropertyName("isFocus")
     public boolean isFocus() { return isFocus; }
+
+    @PropertyName("isFocus")
     public void setFocus(boolean focus) { isFocus = focus; }
     public long getTimeLeft() { return timeLeft; }
     public void setTimeLeft(long timeLeft) { this.timeLeft = timeLeft; }

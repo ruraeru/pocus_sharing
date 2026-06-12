@@ -185,7 +185,7 @@ public class TimerView extends View {
                     lastSnappedMinute = minutes;
                     float snappedProgress = minutes / 60f;
                     setProgress(snappedProgress);
-                    
+
                     if (dialListener != null) {
                         dialListener.onDialChanged(snappedProgress);
                     }
