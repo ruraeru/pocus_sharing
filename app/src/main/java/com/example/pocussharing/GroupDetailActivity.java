@@ -412,7 +412,7 @@ public class GroupDetailActivity extends AppCompatActivity {
         btnDelete.setOnClickListener(v -> {
             new AlertDialog.Builder(this)
                     .setTitle("그룹 삭제")
-                    .setMessage("정말로 이 그룹을 삭제함? 데이터가 모두 지워짐")
+                    .setMessage("정말로 이 그룹을 삭제하시겠습니까?\n 데이터가 모두 지워집니다.")
                     .setPositiveButton("삭제", (d2, which2) -> {
                         dialog.dismiss();
                         deleteGroup(); // DB에서 완전 삭제
@@ -443,7 +443,7 @@ public class GroupDetailActivity extends AppCompatActivity {
         if (group != null && group.getAdminId().equals(currentUserId) && !status.getUserId().equals(currentUserId)) {
             new AlertDialog.Builder(this)
                     .setTitle("멤버 내보내기")
-                    .setMessage(status.getName() + "님을 그룹에서 내보냄?")
+                    .setMessage(status.getName() + " 님을 그룹에서 내보내시겠습니까?")
                     .setPositiveButton("내보내기", (dialog, which) -> {
                         firestoreRepository.leaveGroup(groupId, status.getUserId()).addOnSuccessListener(aVoid -> {
                             Toast.makeText(this, status.getName() + "님을 내보냄", Toast.LENGTH_SHORT).show();
